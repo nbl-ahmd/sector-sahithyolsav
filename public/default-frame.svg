@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350" viewBox="0 0 1080 1350" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1080" y2="1350" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#12595E" />
+      <stop offset="1" stop-color="#1E9A85" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1080" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFD280" />
+      <stop offset="0.5" stop-color="#FFB73C" />
+      <stop offset="1" stop-color="#FFD280" />
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="1080" height="1350" rx="48" fill="url(#bg)" />
+
+  <rect x="30" y="30" width="1020" height="1290" rx="36" stroke="url(#accent)" stroke-width="10" />
+  <rect x="52" y="52" width="976" height="1246" rx="30" stroke="#FDEBC9" stroke-opacity="0.8" stroke-width="4" />
+
+  <rect x="94" y="174" width="892" height="980" rx="28" fill="white" fill-opacity="0" stroke="#FDEBC9" stroke-opacity="0.8" stroke-width="3" />
+
+  <rect x="80" y="70" width="920" height="72" rx="20" fill="#0C3E42" fill-opacity="0.7" />
+  <text x="540" y="117" text-anchor="middle" font-family="Merriweather, serif" font-size="38" font-weight="700" fill="#FFE7B2">FAMILY SAHITYOLSAV</text>
+
+  <rect x="80" y="1194" width="920" height="90" rx="22" fill="#0C3E42" fill-opacity="0.75" />
+  <text x="540" y="1248" text-anchor="middle" font-family="Poppins, sans-serif" font-size="34" font-weight="600" fill="#FDF3DE">Frame Your Moments • Share Your Unit</text>
+</svg>

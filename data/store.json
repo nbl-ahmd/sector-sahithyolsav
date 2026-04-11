@@ -1,0 +1,35 @@
+{
+  "templates": {
+    "family-sahityolsav-frame": {
+      "id": "family-sahityolsav-frame",
+      "name": "Family Sahityolsav Frame",
+      "slug": "family-sahityolsav-frame",
+      "createdBy": "admin",
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-01-01T00:00:00.000Z",
+      "frames": [],
+      "unitText": {
+        "x": 0.05,
+        "y": 0.06,
+        "fontSize": 28,
+        "fontFamily": "'Merriweather', serif",
+        "fontWeight": 700,
+        "color": "#ffffff"
+      },
+      "counterText": {
+        "x": 0.75,
+        "y": 0.06,
+        "fontSize": 28,
+        "fontFamily": "'Oswald', sans-serif",
+        "fontWeight": 700,
+        "color": "#ffffff"
+      },
+      "frameViewport": {
+        "width": 1080,
+        "height": 1350
+      }
+    }
+  },
+  "framedRecords": [],
+  "globalCounter": 0
+}
