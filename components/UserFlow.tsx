@@ -6,6 +6,10 @@ import { FAMILY_FRAME_TEMPLATE_ID, resolveUnit } from "@/lib/constants";
 import { downloadBlob, fileToDataUrl } from "@/lib/client-utils";
 import { TemplateConfig } from "@/lib/types";
 import { FrameCanvas } from "@/components/FrameCanvas";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Upload, Share2, Image as ImageIcon, MapPin, Eye } from "lucide-react";
+import { toast } from "sonner";
 
 interface UserFlowProps {
   templateId: string;
@@ -114,9 +118,14 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
       return;
     }
 
-    const dataUrl = await fileToDataUrl(file);
-    setPhoto(dataUrl);
-    setError("");
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      setPhoto(dataUrl);
+      setError("");
+      toast.success("Photo uploaded successfully.");
+    } catch {
+      toast.error("Failed to read the image file.");
+    }
   };
 
   const createFramedImage = async () => {
@@ -187,84 +196,146 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
       } else {
         downloadBlob(blob, filename);
       }
+      toast.success("Framed photo generated and ready to share!");
     } catch {
-      setError("Could not generate the framed image. Please try again.");
+      toast.error("Could not generate the framed image. Please try again.");
     } finally {
       setWorking(false);
     }
   };
 
   if (loading) {
-    return <p className="status-text">Loading template...</p>;
+    return (
+      <div className="flex items-center justify-center min-h-[400px] border border-dashed rounded-xl bg-slate-50/50">
+        <div className="flex flex-col items-center gap-2 text-slate-500">
+             <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+             <p className="font-medium animate-pulse">Loading frame studio...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!template) {
-    return <p className="status-text error">Template unavailable right now.</p>;
+    return (
+      <div className="p-8 text-center bg-red-50 border border-red-200 rounded-xl text-red-600">
+        <p className="font-bold">Template unavailable right now.</p>
+      </div>
+    );
   }
 
   if (!lockedUnit) {
     return (
-      <p className="status-text error">
-        This link is missing unit information. Please use the unit-specific link shared by the admin.
-      </p>
+      <div className="p-8 text-center bg-amber-50 border border-amber-200 rounded-xl text-amber-700">
+        <p className="font-bold mb-2">Missing Unit Information</p>
+        <p className="text-sm">Please use the unit-specific link shared by your admin.</p>
+      </div>
     );
   }
 
   if (!selectedFrame) {
     return (
-      <p className="status-text error">
-        No frame is published yet. Please ask admin to upload and publish a frame first.
-      </p>
+      <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-xl text-slate-600">
+        <p className="font-bold mb-2">No Frame Available</p>
+        <p className="text-sm">Please ask your admin to upload and publish a frame first.</p>
+      </div>
     );
   }
 
   return (
-    <div className="panel-grid two-col">
-      <section className="card">
-        <div className="card-head">
-          <h2>Upload & Share</h2>
-          <p>Unit: {lockedUnit}</p>
-        </div>
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <div className="lg:col-span-5 space-y-6">
+        <Card className="border-slate-200 shadow-sm">
+          <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-4">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Upload className="w-5 h-5 text-primary" />
+              Upload Your Photo
+            </CardTitle>
+            <CardDescription className="flex items-center gap-1.5 mt-2">
+               <MapPin className="w-4 h-4" /> Selected Unit: <strong className="text-slate-900">{lockedUnit}</strong>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6 space-y-6">
+            
+            <div className="relative">
+              <input 
+                type="file" 
+                accept="image/*" 
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                onChange={onPhotoUpload} 
+              />
+              <div className={`transition-all duration-200 border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center gap-3 ${photo ? 'border-primary/50 bg-primary/5 hover:border-primary hover:bg-primary/10' : 'border-slate-300 bg-slate-50 hover:border-primary hover:bg-slate-100'}`}>
+                <div className={`p-3 rounded-full ${photo ? 'bg-primary/20 text-primary' : 'bg-slate-200 text-slate-500'}`}>
+                  {photo ? <ImageIcon className="w-6 h-6" /> : <Upload className="w-6 h-6" />}
+                </div>
+                <div>
+                   <p className="font-semibold text-slate-900">{photo ? "Click to change photo" : "Select a photo to frame"}</p>
+                   <p className="text-xs text-slate-500 mt-1">JPEG, PNG up to 5MB</p>
+                </div>
+              </div>
+            </div>
 
-        <label className="field-label">Photo</label>
-        <label className="uploader-inline">
-          <input type="file" accept="image/*" onChange={onPhotoUpload} />
-          <span>{photo ? "Replace uploaded photo" : "Upload photo"}</span>
-        </label>
+            <Button
+              size="lg"
+              className="w-full h-14 text-base font-semibold shadow-md transition-all gap-2"
+              onClick={createFramedImage}
+              disabled={working || !photo}
+              variant={photo ? "default" : "secondary"}
+            >
+              <Share2 className="w-5 h-5" />
+              {working ? "Generating your frame..." : photo ? "Generate & Share Frame" : "Upload photo to continue"}
+            </Button>
 
-        <div className="action-row">
-          <button
-            className="btn primary"
-            type="button"
-            onClick={createFramedImage}
-            disabled={working || !photo}
-          >
-            {working ? "Preparing..." : "Share"}
-          </button>
-        </div>
+          </CardContent>
+        </Card>
 
-        {error ? <p className="status-text error">{error}</p> : null}
-      </section>
+        {/* Info Card */}
+        <Card className="border-none bg-blue-50/50 shadow-none">
+          <CardContent className="p-4 text-sm text-blue-800 flex gap-3">
+             <div className="mt-0.5"><Eye className="w-4 h-4 text-blue-500" /></div>
+             <p>Your photo will be automatically placed behind the frame. A unique counter number will be generated when you share.</p>
+          </CardContent>
+        </Card>
+      </div>
 
-      <section className="card">
-        <div className="card-head">
-          <h2>Preview</h2>
-          <p>Ready-to-share output</p>
-        </div>
-        <div ref={previewWrapRef}>
-          <FrameCanvas
-            frameImage={selectedFrame.image}
-            photo={photo}
-            width={previewWidth}
-            height={previewHeight}
-            unitLabel={lockedUnit}
-            counterLabel={`#${displayCounter}`}
-            unitText={template.unitText}
-            counterText={template.counterText}
-            photoTransform={staticPhotoTransform}
-          />
-        </div>
-      </section>
+      <div className="lg:col-span-7">
+        <Card className="border-slate-200 shadow-sm overflow-hidden sticky top-8">
+          <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-4">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Eye className="w-5 h-5 text-slate-500" />
+              Live Preview
+            </CardTitle>
+            <CardDescription>
+              {photo ? "This is how your final framed photo will look." : "Upload a photo to see the preview."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0 flex justify-center bg-slate-100 min-h-[400px] relative">
+            {!photo && (
+              <div className="absolute inset-0 flex items-center justify-center text-slate-400 z-10 pointer-events-none">
+                 <div className="flex flex-col items-center gap-2 opacity-50">
+                    <ImageIcon className="w-12 h-12" />
+                    <p className="font-medium text-sm">Preview will appear here</p>
+                 </div>
+              </div>
+            )}
+            <div ref={previewWrapRef} className={`w-full max-w-[520px] mx-auto p-4 md:p-8 flex items-center justify-center transition-opacity duration-300 ${photo ? 'opacity-100' : 'opacity-40 grayscale-[50%]'}`}>
+              <div className="shadow-2xl rounded-sm overflow-hidden" style={{ width: previewWidth }}>
+                <FrameCanvas
+                  frameImage={selectedFrame.image}
+                  photo={photo}
+                  width={previewWidth}
+                  height={previewHeight}
+                  unitLabel={lockedUnit}
+                  counterLabel={`#${displayCounter}`}
+                  unitText={template.unitText}
+                  counterText={template.counterText}
+                  photoTransform={staticPhotoTransform}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <div
         style={{

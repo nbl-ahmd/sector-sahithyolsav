@@ -57,6 +57,9 @@ export function FrameCanvas({
   const containerRef = useRef<HTMLDivElement>(null);
   const [photoNatural, setPhotoNatural] = useState({ width: 0, height: 0 });
 
+  const BASE_PREVIEW_WIDTH = 400; // Reference width for font sizing
+  const scaleRatio = width / BASE_PREVIEW_WIDTH;
+
   const pointers = useRef<Map<number, Point>>(new Map());
   const panAnchor = useRef<Point | null>(null);
   const pinchAnchorDistance = useRef<number | null>(null);
@@ -314,14 +317,13 @@ export function FrameCanvas({
   return (
     <div
       ref={containerRef}
+      className="relative overflow-hidden select-none touch-none touch-action-none"
       style={{
         width,
         height,
-        position: "relative",
-        borderRadius: 18,
-        overflow: "hidden",
-        background: "#f8fafc",
-        boxShadow: "inset 0 0 0 1px #e5e7eb",
+        backgroundImage: `url('${frameImage}')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
       }}
     >
       {photo ? (

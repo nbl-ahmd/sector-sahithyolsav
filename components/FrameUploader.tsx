@@ -1,8 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { fileToDataUrl, slugify } from "@/lib/client-utils";
 import { FrameVariant } from "@/lib/types";
+import { toast } from "sonner";
 
 interface FrameUploaderProps {
   onFramesAdd: (frames: FrameVariant[]) => void;
@@ -19,24 +19,37 @@ export function FrameUploader({ onFramesAdd }: FrameUploaderProps) {
     }
 
     setLoading(true);
-    const now = new Date().toISOString();
-    const frames: FrameVariant[] = [];
 
-    for (const file of files) {
-      const image = await fileToDataUrl(file);
-      frames.push({
-        id: `${slugify(file.name)}-${Math.random().toString(36).slice(2, 8)}`,
-        name: file.name.replace(/\.[^/.]+$/, ""),
-        image,
-        createdAt: now,
+    try {
+      const formData = new FormData();
+      for (const file of files) {
+        formData.append("files", file);
+      }
+
+      const response = await fetch("/api/admin/blob", {
+        method: "POST",
+        body: formData,
       });
-    }
 
-    onFramesAdd(frames);
-    setLoading(false);
+      if (!response.ok) {
+        throw new Error("Upload failed");
+      }
 
-    if (inputRef.current) {
-      inputRef.current.value = "";
+      const data = (await response.json()) as { frames?: FrameVariant[] };
+      const frames = data.frames ?? [];
+      if (!frames.length) {
+        throw new Error("No frames returned");
+      }
+
+      onFramesAdd(frames);
+      toast.success(`${frames.length} frame(s) uploaded.`);
+    } catch {
+      toast.error("Could not upload frames. Check Blob configuration.");
+    } finally {
+      setLoading(false);
+      if (inputRef.current) {
+        inputRef.current.value = "";
+      }
     }
   };
 

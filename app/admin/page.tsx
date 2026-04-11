@@ -1,13 +1,13 @@
-import { AppShell } from "@/components/AppShell";
+import { AdminShell } from "@/components/AdminShell";
 import { AdminDashboard } from "@/components/AdminDashboard";
 
 export default function AdminPage() {
   return (
-    <AppShell
+    <AdminShell
       title="Admin Dashboard"
       subtitle="Manage the family frame template, styling, unit links, and activity insights."
     >
       <AdminDashboard />
-    </AppShell>
+    </AdminShell>
   );
 }
