@@ -347,6 +347,35 @@ export async function getLeaderboard(
   };
 }
 
+export async function getTodayLeadingUnit(
+  templateId = FAMILY_FRAME_TEMPLATE_ID,
+): Promise<{ unit: string; count: number } | null> {
+  const storeList = await readStore();
+  const template = await getTemplate(templateId);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayStr = today.toISOString();
+
+  const templateRecords = storeList.framedRecords.filter(
+    (item) => item.templateId === template.id && item.createdAt >= todayStr,
+  );
+
+  const unitMap = new Map<string, number>();
+  for (const record of templateRecords) {
+    unitMap.set(record.unit, (unitMap.get(record.unit) || 0) + 1);
+  }
+
+  let leadingUnit: { unit: string; count: number } | null = null;
+  for (const [unit, count] of unitMap.entries()) {
+    if (!leadingUnit || count > leadingUnit.count) {
+      leadingUnit = { unit, count };
+    }
+  }
+
+  return leadingUnit;
+}
+
 export async function getCurrentGlobalCounter(): Promise<number> {
   const store = await readStore();
   return store.globalCounter;

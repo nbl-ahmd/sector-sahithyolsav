@@ -61,7 +61,7 @@ export function AdminShell({ title, subtitle, children }: AdminShellProps) {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-100/80">
+    <div className="flex h-screen bg-slate-100/80 overflow-hidden">
       {mobileMenuOpen && (
         <div
           className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm lg:hidden transition-opacity"
@@ -71,28 +71,31 @@ export function AdminShell({ title, subtitle, children }: AdminShellProps) {
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-72 transform border-r border-slate-200 bg-white text-slate-900 shadow-xl transition-[width,transform] duration-300 ease-out lg:static lg:translate-x-0 lg:flex lg:flex-col",
-          desktopCollapsed ? "lg:w-20" : "lg:w-64",
-          mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+          "fixed inset-y-0 left-0 z-50 transform border-r border-slate-200/80 bg-white/95 backdrop-blur-xl text-slate-900 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] lg:static lg:translate-x-0 lg:flex lg:flex-col",
+          desktopCollapsed ? "lg:w-[88px]" : "lg:w-72",
+          mobileMenuOpen ? "translate-x-0 w-72" : "-translate-x-full w-72"
         )}
       >
-        <div className="relative flex h-20 shrink-0 items-center justify-between border-b border-slate-200 px-5">
+        <div className={cn("relative flex h-20 shrink-0 items-center justify-between border-b border-slate-200/80 px-6 transition-all duration-500", desktopCollapsed && "px-0 justify-center")}>
           <Link
             href="/"
             className={cn(
-              "flex items-center gap-3 text-slate-900 font-bold text-xl tracking-tight transition-all duration-300 group hover:text-slate-700",
-              desktopCollapsed && "lg:mx-auto lg:gap-0"
+              "flex items-center gap-3 text-slate-900 font-bold text-[19px] tracking-tight transition-all duration-500 group hover:opacity-80",
+              desktopCollapsed && "justify-center w-full"
             )}
           >
-            <div className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white transition-all duration-300 group-hover:scale-105">
-              <Image src="/SAHITYOTSAV LOGO.png" fill alt="Sahityolsav Logo" className="object-contain" sizes="32px" />
+            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-slate-50 shadow-sm border border-slate-200 transition-all duration-500 group-hover:scale-105 group-hover:shadow-md group-hover:bg-white group-active:scale-95">
+              <Image src="/SAHITYOTSAV LOGO.png" fill alt="Sahityolsav Logo" className="object-contain p-1.5" sizes="40px" />
             </div>
-            {!desktopCollapsed && <span className="translate-y-[0.5px]">Admin Center</span>}
+            <div className={cn("flex flex-col whitespace-nowrap transition-all duration-500", desktopCollapsed ? "opacity-0 w-0 translate-x-4 hidden" : "opacity-100 w-auto translate-x-0")}>
+              <span className="leading-tight">Admin Center</span>
+              <span className="text-[10px] text-slate-500 tracking-wider font-semibold uppercase leading-tight">Control Panel</span>
+            </div>
           </Link>
           <Button
             variant="ghost"
             size="icon"
-            className="ml-auto lg:hidden text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+            className={cn("text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all duration-300 lg:hidden", desktopCollapsed && "hidden")}
             onClick={() => setMobileMenuOpen(false)}
           >
             <X className="h-5 w-5" />
@@ -100,11 +103,11 @@ export function AdminShell({ title, subtitle, children }: AdminShellProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="hidden text-slate-500 hover:text-slate-900 hover:bg-slate-100 lg:flex transition-colors"
+            className={cn("hidden lg:flex text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-all duration-300 shrink-0", desktopCollapsed && "absolute -right-3.5 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full border border-slate-200 bg-white shadow-sm z-50 hover:bg-slate-50")}
             onClick={toggleDesktopSidebar}
             title={desktopCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            {desktopCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+            {desktopCollapsed ? <PanelLeftOpen className="h-3.5 w-3.5 text-slate-600" /> : <PanelLeftClose className="h-4.5 w-4.5" />}
           </Button>
         </div>
 
@@ -116,7 +119,7 @@ export function AdminShell({ title, subtitle, children }: AdminShellProps) {
               </p>
             </div>
           )}
-          <nav className="space-y-1 rounded-xl border border-slate-200 bg-white p-2">
+          <nav className="space-y-1 py-2">
             {navItems.map((item) => {
               const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
 
@@ -127,29 +130,29 @@ export function AdminShell({ title, subtitle, children }: AdminShellProps) {
                   onClick={() => setMobileMenuOpen(false)}
                   title={desktopCollapsed ? item.label : undefined}
                   className={cn(
-                    "group relative flex w-full items-center overflow-hidden rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-200",
+                    "group relative flex w-full items-center overflow-hidden rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-300",
                     desktopCollapsed ? "lg:justify-center lg:px-0" : "justify-between",
                     active
-                      ? "bg-slate-900 text-white"
+                      ? "bg-slate-900 text-white shadow-md shadow-slate-900/10"
                       : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   )}
                 >
                   <span
                     className={cn(
-                      "absolute inset-y-1 left-0 w-1 rounded-r-full transition-all duration-300",
-                      active ? "bg-white/80 opacity-100" : "bg-transparent opacity-0"
+                      "absolute inset-y-1.5 left-0 w-1 rounded-r-full transition-all duration-300",
+                      active ? "bg-white/80 opacity-100 shadow-[0_0_8px_rgba(255,255,255,0.6)]" : "bg-transparent opacity-0"
                     )}
                   />
                   <div className="flex items-center gap-3">
                     <item.icon
                       className={cn(
-                        "h-5 w-5 transition-colors duration-200",
-                        active ? "text-white" : "text-slate-500 group-hover:text-slate-700"
+                        "h-5 w-5 transition-all duration-300",
+                        active ? "text-white scale-110" : "text-slate-500 group-hover:text-slate-700 group-hover:scale-105"
                       )}
                     />
                     {!desktopCollapsed && <span className="truncate">{item.label}</span>}
                   </div>
-                  {!desktopCollapsed && active && <ChevronRight className="w-4 h-4 opacity-90" />}
+                  {!desktopCollapsed && active && <ChevronRight className="w-4 h-4 opacity-90 transition-transform duration-300 translate-x-1" />}
                 </Link>
               );
             })}

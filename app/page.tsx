@@ -7,19 +7,25 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Image as ImageIcon, Users, Crown, Flame } from "lucide-react";
 
 import { HomeCountdown } from "@/components/HomeCountdown";
-import { getAppSettings, getLeaderboard } from "@/lib/store";
+import { getAppSettings, getLeaderboard, getTodayLeadingUnit } from "@/lib/store";
+import { HeroSection } from "@/components/HeroSection";
 
 export default async function HomePage() {
   const familyFrameLink = getFamilyFrameRoute();
-  const [leaderboardData, appSettings] = await Promise.all([getLeaderboard(), getAppSettings()]);
+  const [leaderboardData, appSettings, todayLeadingUnit] = await Promise.all([getLeaderboard(), getAppSettings(), getTodayLeadingUnit()]);
   const leadingUnit = leaderboardData.unitTotals[0];
   const unitCountMap = new Map(leaderboardData.unitTotals.map((entry) => [entry.unit, entry.count]));
 
   return (
-    <AppShell
-      title="Overview"
-      subtitle="Welcome to Sector Sahityolsav Control"
-    >
+    <AppShell>
+      <HeroSection targetDate={appSettings.sahithyolsavDate} />
+
+      <div className="mb-4 sm:mb-5 flex items-center justify-center">
+        <Badge className="bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1.5 text-[11px] sm:text-xs font-bold tracking-wider uppercase rounded-full">
+          Family Sahityolsav Status
+        </Badge>
+      </div>
+
       <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
         <Card className="border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 rounded-xl bg-white overflow-hidden relative">
           <CardContent className="p-5 sm:p-6 flex flex-col justify-between h-full min-h-[90px]">
@@ -58,13 +64,26 @@ export default async function HomePage() {
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-sm transition-all duration-300 rounded-xl bg-gradient-to-br from-[#FFF8F0] to-[#FFF1DF] relative overflow-hidden">
-          <div className="absolute right-0 top-0 w-24 h-24 bg-white/40 rounded-bl-full pointer-events-none" />
-          <CardContent className="p-5 sm:p-6 relative z-10 h-full flex flex-col justify-center min-h-[90px]">
-            <h3 className="text-sm sm:text-base flex items-center justify-between font-bold text-amber-950 mb-3 drop-shadow-sm">
-              Sector Sahityolsav <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 fill-amber-500" />
-            </h3>
-            <HomeCountdown targetDate={appSettings.sahithyolsavDate} />
+        <Card className="border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 rounded-xl bg-white overflow-hidden relative">
+          <CardContent className="p-5 sm:p-6 flex flex-col justify-between h-full min-h-[90px]">
+            <div className="flex items-center justify-between mb-3">
+              <div className="bg-purple-50 rounded-lg p-2 text-purple-600 ring-1 ring-purple-100 flex items-center justify-center">
+                <Flame className="w-4 h-4 sm:w-5 sm:h-5" />
+              </div>
+            </div>
+            <div className="flex justify-between items-end">
+              <div className="min-w-0 pr-2">
+                <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Today&apos;s Top Unit</p>
+                <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 truncate" title={todayLeadingUnit?.unit ?? "N/A"}>
+                  {todayLeadingUnit ? todayLeadingUnit.unit : "N/A"}
+                </h3>
+              </div>
+              {todayLeadingUnit && (
+                 <div className="bg-purple-100 px-2 py-1 rounded-md text-purple-700 text-sm font-bold border border-purple-200 shadow-sm">
+                   +{todayLeadingUnit.count}
+                 </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

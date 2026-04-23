@@ -609,6 +609,29 @@ export async function getLeaderboard(
   };
 }
 
+export async function getTodayLeadingUnit(
+  templateId = FAMILY_FRAME_TEMPLATE_ID,
+): Promise<{ unit: string; count: number } | null> {
+  await ensureSchema();
+  const sql = getSql();
+
+  const template = await getTemplate(templateId);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const rows = (await sql`
+    SELECT unit, COUNT(*)::int AS count
+    FROM framed_records
+    WHERE template_id = ${template.id}
+      AND created_at >= ${today.toISOString()}
+    GROUP BY unit
+    ORDER BY count DESC
+    LIMIT 1
+  `) as Array<{ unit: string; count: number }>;
+
+  return rows.length > 0 ? rows[0] : null;
+}
+
 export async function getCurrentGlobalCounter(): Promise<number> {
   await ensureSchema();
   const sql = getSql();

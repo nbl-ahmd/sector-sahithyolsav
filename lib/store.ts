@@ -35,6 +35,10 @@ export async function getLeaderboard(templateId?: string): Promise<LeaderboardSn
   return shouldUsePostgres() ? postgresStore.getLeaderboard(templateId) : fileStore.getLeaderboard(templateId);
 }
 
+export async function getTodayLeadingUnit(templateId?: string): Promise<{unit: string, count: number} | null> {
+  return shouldUsePostgres() ? postgresStore.getTodayLeadingUnit(templateId) : fileStore.getTodayLeadingUnit(templateId);
+}
+
 export async function getCurrentGlobalCounter(): Promise<number> {
   return shouldUsePostgres()
     ? postgresStore.getCurrentGlobalCounter()
