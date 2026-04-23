@@ -1,10 +1,10 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/AdminShell";
-import { AdminDashboard } from "@/components/AdminDashboard";
+import { AdminManualCountsView } from "@/components/AdminManualCountsView";
 import { ADMIN_SESSION_COOKIE_NAME, isValidAdminSessionToken } from "@/lib/admin-auth";
 
-export default async function AdminPage() {
+export default async function AdminCountsPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get(ADMIN_SESSION_COOKIE_NAME)?.value;
 
@@ -14,10 +14,10 @@ export default async function AdminPage() {
 
   return (
     <AdminShell
-      title="Template Dashboard"
-      subtitle="Manage the family frame template, styling, and share links."
+      title="Manual Count Adjustment"
+      subtitle="Manage per-unit manual counts as a separate workflow from frame template editing."
     >
-      <AdminDashboard />
+      <AdminManualCountsView />
     </AdminShell>
   );
 }

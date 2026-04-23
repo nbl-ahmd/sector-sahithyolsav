@@ -4,172 +4,144 @@ import { UNIT_LIST, getFamilyFrameRoute } from "@/lib/constants";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Image as ImageIcon, Users, LayoutDashboard, Crown, Flame } from "lucide-react";
+import { ArrowRight, Image as ImageIcon, Users, Crown, Flame } from "lucide-react";
 
-export default function HomePage() {
+import { HomeCountdown } from "@/components/HomeCountdown";
+import { getAppSettings, getLeaderboard } from "@/lib/store";
+
+export default async function HomePage() {
   const familyFrameLink = getFamilyFrameRoute();
+  const [leaderboardData, appSettings] = await Promise.all([getLeaderboard(), getAppSettings()]);
+  const leadingUnit = leaderboardData.unitTotals[0];
+  const unitCountMap = new Map(leaderboardData.unitTotals.map((entry) => [entry.unit, entry.count]));
 
   return (
     <AppShell
       title="Overview"
-      subtitle="Welcome to Sector Sahityolsav Studio"
+      subtitle="Welcome to Sector Sahityolsav Control"
     >
-      {/* Top Banner (Like the "Remaining time to completion" in the screenshot) */}
-      <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
-        <Card className="border-none shadow-sm bg-white overflow-hidden relative">
-          <CardContent className="p-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="p-2 bg-emerald-100 rounded-lg text-emerald-600">
-                    <Users className="w-5 h-5" />
-                  </div>
-                </div>
-                <p className="text-sm font-medium text-slate-500">Active Units</p>
-                <h3 className="text-3xl font-bold tracking-tight text-slate-900 mt-1">{UNIT_LIST.length}</h3>
+      <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+        <Card className="border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 rounded-xl bg-white overflow-hidden relative">
+          <CardContent className="p-5 sm:p-6 flex flex-col justify-between h-full min-h-[90px]">
+            <div className="flex items-center justify-between mb-3">
+              <div className="bg-emerald-50 rounded-lg p-2 text-emerald-600 ring-1 ring-emerald-100 flex items-center justify-center">
+                <Users className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
+            </div>
+            <div>
+              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Sector Total</p>
+              <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">{leaderboardData.total}</h3>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-sm bg-white overflow-hidden relative">
-          <CardContent className="p-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
-                    <ImageIcon className="w-5 h-5" />
-                  </div>
-                </div>
-                <p className="text-sm font-medium text-slate-500">Framing Studio</p>
-                <h3 className="text-3xl font-bold tracking-tight text-slate-900 mt-1">Ready</h3>
+        <Card className="border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 rounded-xl bg-white overflow-hidden relative">
+          <CardContent className="p-5 sm:p-6 flex flex-col justify-between h-full min-h-[90px]">
+            <div className="flex items-center justify-between mb-3">
+              <div className="bg-blue-50 rounded-lg p-2 text-blue-600 ring-1 ring-blue-100 flex items-center justify-center">
+                <Crown className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
+            </div>
+            <div className="flex justify-between items-end">
+              <div className="min-w-0 pr-2">
+                <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Leading Unit</p>
+                <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 truncate" title={leadingUnit?.unit ?? "N/A"}>
+                  {leadingUnit ? leadingUnit.unit : "N/A"}
+                </h3>
+              </div>
+              {leadingUnit && (
+                 <div className="bg-slate-100 px-2 py-1 rounded-md text-slate-700 text-sm font-bold border border-slate-200 shadow-sm">
+                   {leadingUnit.count}
+                 </div>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-sm bg-amber-50 relative overflow-hidden">
-          <div className="absolute right-0 top-0 w-32 h-32 bg-amber-100 rounded-bl-full -mr-8 -mt-8 pointer-events-none" />
-          <CardContent className="p-6 relative z-10">
-            <div className="flex flex-col h-full justify-between">
-              <h3 className="text-lg flex items-center gap-2 font-bold text-amber-900">
-                Sector Sahityolsav <Flame className="w-5 h-5 text-amber-500 fill-amber-500" />
-              </h3>
-              <div className="mt-4 flex gap-4 text-amber-900">
-                <div className="text-center">
-                  <span className="block text-3xl font-black">20</span>
-                  <span className="text-xs font-semibold uppercase tracking-wider opacity-70">Days</span>
-                </div>
-                <div className="text-3xl font-black opacity-25">:</div>
-                <div className="text-center">
-                  <span className="block text-3xl font-black">12</span>
-                  <span className="text-xs font-semibold uppercase tracking-wider opacity-70">Hours</span>
-                </div>
-              </div>
-            </div>
+        <Card className="border-none shadow-sm transition-all duration-300 rounded-xl bg-gradient-to-br from-[#FFF8F0] to-[#FFF1DF] relative overflow-hidden">
+          <div className="absolute right-0 top-0 w-24 h-24 bg-white/40 rounded-bl-full pointer-events-none" />
+          <CardContent className="p-5 sm:p-6 relative z-10 h-full flex flex-col justify-center min-h-[90px]">
+            <h3 className="text-sm sm:text-base flex items-center justify-between font-bold text-amber-950 mb-3 drop-shadow-sm">
+              Sector Sahityolsav <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 fill-amber-500" />
+            </h3>
+            <HomeCountdown targetDate={appSettings.sahithyolsavDate} />
           </CardContent>
         </Card>
+      </div>
+
+      <div className="mb-4 sm:mb-5 flex items-center justify-between">
+        <h2 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900">Quick Actions</h2>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 mb-10 sm:mb-12">
+        <Link href="/family" className="block focus:outline-none">
+          <Card className="border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 rounded-xl bg-white overflow-hidden group hover:border-blue-200/60 cursor-pointer h-full">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center p-4 sm:p-5 gap-4">
+              <div className="text-blue-600 bg-blue-50 p-2.5 rounded-lg ring-1 ring-blue-100 shadow-sm group-hover:scale-105 group-hover:bg-blue-100 group-hover:ring-blue-200 transition-all">
+                <ImageIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-bold text-slate-900 mb-0.5 group-hover:text-blue-700 transition-colors">Family Frame</h3>
+                <p className="text-xs text-slate-500 leading-relaxed font-medium">Frame and share family sahithyolsav images.</p>
+              </div>
+              <div className="hidden sm:flex text-slate-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all">
+                <ArrowRight className="w-5 h-5" />
+              </div>
+            </div>
+          </Card>
+        </Link>
+
+        <Link href="/sector" className="block focus:outline-none">
+          <Card className="border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 rounded-xl bg-white overflow-hidden group hover:border-indigo-200/60 cursor-pointer h-full">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center p-4 sm:p-5 gap-4">
+              <div className="text-indigo-600 bg-indigo-50 p-2.5 rounded-lg ring-1 ring-indigo-100 shadow-sm group-hover:scale-105 group-hover:bg-indigo-100 group-hover:ring-indigo-200 transition-all">
+                <Crown className="w-5 h-5 sm:w-6 sm:h-6" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-bold text-slate-900 mb-0.5 group-hover:text-indigo-700 transition-colors">Leaderboard & Stats</h3>
+                <p className="text-xs text-slate-500 leading-relaxed font-medium">Monitor individual unit standings and overall sector performance.</p>
+              </div>
+              <div className="hidden sm:flex text-slate-300 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all">
+                <ArrowRight className="w-5 h-5" />
+              </div>
+            </div>
+          </Card>
+        </Link>
       </div>
 
       <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-xl font-bold tracking-tight text-slate-900">Quick Actions</h2>
+        <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">Units</h2>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-        <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <ImageIcon className="w-5 h-5 text-primary" />
-              Family Frame Workflow
-            </CardTitle>
-            <CardDescription className="text-sm">
-              Distribute links and enable families to easily frame and share their images.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild className="w-full justify-between bg-white text-slate-700 border-slate-200 hover:bg-slate-50 border hover:text-slate-900 shadow-sm">
-              <Link href="/family">
-                Open Family Section
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <LayoutDashboard className="w-5 h-5 text-primary" />
-              Admin Configuration
-            </CardTitle>
-            <CardDescription className="text-sm">
-              Configure frames, manage uploads, and track usage data by units securely.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild className="w-full justify-between bg-white text-slate-700 border-slate-200 hover:bg-slate-50 border hover:text-slate-900 shadow-sm">
-              <Link href="/admin">
-                Go to Admin Panel
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Crown className="w-5 h-5 text-primary" />
-              Leaderboard & Stats
-            </CardTitle>
-            <CardDescription className="text-sm">
-              Monitor individual unit standings and overall sector performance.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild className="w-full justify-between bg-white text-slate-700 border-slate-200 hover:bg-slate-50 border hover:text-slate-900 shadow-sm">
-              <Link href="/sector">
-                View Sector Stats
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-xl font-bold tracking-tight text-slate-900">Participating Units</h2>
-      </div>
-
-      <Card className="border-slate-200 shadow-sm bg-white overflow-hidden">
+      <Card className="border border-slate-200 shadow-md sm:shadow-lg rounded-2xl bg-white overflow-hidden mb-12">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-600">
-            <thead className="bg-slate-50/50 border-b border-slate-200 text-xs uppercase font-semibold text-slate-500 tracking-wider">
+          <table className="w-full text-left text-sm text-slate-700 whitespace-nowrap min-w-[500px]">
+            <thead className="bg-slate-100/80 border-b border-slate-200 text-[10px] sm:text-xs uppercase font-bold text-slate-500 tracking-widest sticky top-0">
               <tr>
-                <th className="px-6 py-4">Unit Name</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4 text-right">Quick Link</th>
+                <th className="px-4 sm:px-6 py-4 sm:py-5">Unit Name</th>
+                <th className="px-4 sm:px-6 py-4 sm:py-5">Status</th>
+                <th className="px-4 sm:px-6 py-4 sm:py-5 text-right">Quick Link</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 bg-white">
               {UNIT_LIST.map((unit) => (
-                <tr key={unit} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-6 py-4 font-medium text-slate-900 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600">
+                <tr key={unit} className="hover:bg-slate-50/80 transition-all duration-200 group">
+                  <td className="px-4 sm:px-6 py-4 sm:py-5 font-bold text-slate-900 flex items-center gap-3 sm:gap-4 text-sm sm:text-base">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-indigo-50 flex items-center justify-center text-xs sm:text-sm font-extrabold text-indigo-600 ring-4 ring-white shadow-sm group-hover:scale-105 transition-transform">
                       {unit.substring(0, 2).toUpperCase()}
                     </div>
                     {unit}
                   </td>
-                  <td className="px-6 py-4">
-                    <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 hover:bg-emerald-50 font-semibold border-emerald-200">
-                      Active
+                  <td className="px-4 sm:px-6 py-4 sm:py-5">
+                    <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold border border-indigo-200/60 shadow-sm px-2.5 py-1">
+                      {unitCountMap.get(unit) ?? 0}
                     </Badge>
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <Button variant="ghost" size="sm" asChild className="text-primary hover:text-primary hover:bg-primary/10">
+                  <td className="px-4 sm:px-6 py-4 sm:py-5 text-right">
+                    <Button variant="ghost" size="sm" asChild className="text-primary font-semibold hover:text-primary hover:bg-primary/5 rounded-full transition-all px-4 group-hover:shadow-sm ring-1 ring-transparent hover:ring-primary/20">
                       <Link href={`${familyFrameLink}?unit=${encodeURIComponent(unit)}`}>
                         Frame Image
-                        <ArrowRight className="h-4 w-4 ml-1" />
+                        <ArrowRight className="h-4 w-4 ml-1.5 transition-transform group-hover:translate-x-1" />
                       </Link>
                     </Button>
                   </td>

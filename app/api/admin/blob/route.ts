@@ -1,9 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { put } from "@vercel/blob";
 import { NextRequest, NextResponse } from "next/server";
+import { ADMIN_SESSION_COOKIE_NAME, isValidAdminSessionToken } from "@/lib/admin-auth";
 import { FrameVariant } from "@/lib/types";
 
 export const runtime = "nodejs";
+
+const MAX_FILES_PER_UPLOAD = 20;
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+const ALLOWED_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
 
 function slugify(text: string): string {
   return text
@@ -23,6 +28,11 @@ function getFileExtension(fileName: string): string {
 
 export async function POST(req: NextRequest) {
   try {
+    const session = req.cookies.get(ADMIN_SESSION_COOKIE_NAME)?.value;
+    if (!isValidAdminSessionToken(session)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     if (!process.env.BLOB_READ_WRITE_TOKEN) {
       return NextResponse.json(
         { error: "BLOB_READ_WRITE_TOKEN is not configured" },
@@ -39,11 +49,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No files provided" }, { status: 400 });
     }
 
+    if (files.length > MAX_FILES_PER_UPLOAD) {
+      return NextResponse.json(
+        { error: `Maximum ${MAX_FILES_PER_UPLOAD} files allowed per upload` },
+        { status: 400 },
+      );
+    }
+
     const uploadedFrames: FrameVariant[] = [];
 
     for (const file of files) {
-      if (!file.type.startsWith("image/")) {
-        return NextResponse.json({ error: "Only image files are allowed" }, { status: 400 });
+      if (!ALLOWED_TYPES.has(file.type)) {
+        return NextResponse.json(
+          { error: "Only PNG, JPG, JPEG, and WEBP images are allowed" },
+          { status: 400 },
+        );
+      }
+
+      if (file.size <= 0 || file.size > MAX_UPLOAD_BYTES) {
+        return NextResponse.json(
+          { error: "Each file must be between 1 byte and 10MB" },
+          { status: 400 },
+        );
       }
 
       const ext = getFileExtension(file.name);
@@ -66,7 +93,8 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ frames: uploadedFrames });
-  } catch {
+  } catch (error) {
+    console.error("Frame upload failed", error);
     return NextResponse.json({ error: "Frame upload failed" }, { status: 500 });
   }
 }

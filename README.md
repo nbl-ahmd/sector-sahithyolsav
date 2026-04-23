@@ -3,6 +3,7 @@
 Standalone Next.js app for Sector Sahityolsav with the Family-domain frame feature:
 
 - Admin dashboard for template/frame management
+- Manual per-unit count adjustments for past/missed events
 - Unit-specific Family frame links for users
 - Global incrementing counter on each framed photo
 - Sector leaderboard and share options
@@ -32,12 +33,24 @@ User flow route: `/family/frame/<template-id>?unit=<unit-name>`
 
 ## Environment variables
 
-Create `.env.local` in project root:
+Copy `.env.example` to `.env.local` and set real values:
 
 ```bash
+cp .env.example .env.local
+
 DATABASE_URL=postgres://USER:PASSWORD@HOST/DB_NAME?sslmode=require
 BLOB_READ_WRITE_TOKEN=vercel_blob_rw_xxxxx
+ADMIN_USERNAME=sKarassery
+ADMIN_PASSWORD=krysector
+ADMIN_AUTH_SECRET=replace_with_long_random_secret
 ```
+
+## Admin access
+
+- Admin entry is hidden from public user navigation.
+- Access admin manually by opening `/admin`.
+- Unauthenticated requests are redirected to `/admin/login`.
+- Login is protected with an `httpOnly` signed session cookie.
 
 ## Neon setup (new database + tables)
 
@@ -51,6 +64,24 @@ The app also auto-creates tables on first DB access, but running `database/schem
 
 Admin frame uploads now use `POST /api/admin/blob` and store files in Vercel Blob.
 Returned Blob URLs are saved inside the template `frames` records in Postgres.
+
+Upload safeguards:
+
+- Max 20 files per request
+- Max 10MB per file
+- Allowed formats: PNG, JPG/JPEG, WEBP
+
+## Health check endpoint
+
+Use `GET /api/health` for uptime/infra checks.
+
+It reports:
+
+- App status (`ok` or `degraded`)
+- DB mode (`postgres` or `file` fallback)
+- DB connectivity result
+- Blob token availability
+- Response time
 
 ## Deploy as separate app
 

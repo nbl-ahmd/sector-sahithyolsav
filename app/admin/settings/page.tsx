@@ -1,10 +1,10 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/AdminShell";
-import { AdminDashboard } from "@/components/AdminDashboard";
+import { AdminSettingsView } from "@/components/AdminSettingsView";
 import { ADMIN_SESSION_COOKIE_NAME, isValidAdminSessionToken } from "@/lib/admin-auth";
 
-export default async function AdminPage() {
+export default async function AdminSettingsPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get(ADMIN_SESSION_COOKIE_NAME)?.value;
 
@@ -14,10 +14,10 @@ export default async function AdminPage() {
 
   return (
     <AdminShell
-      title="Template Dashboard"
-      subtitle="Manage the family frame template, styling, and share links."
+      title="App Settings"
+      subtitle="Configure global controls used across the public-facing pages."
     >
-      <AdminDashboard />
+      <AdminSettingsView />
     </AdminShell>
   );
 }

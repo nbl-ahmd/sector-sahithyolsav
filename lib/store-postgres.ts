@@ -6,7 +6,16 @@ import {
   getDefaultTemplate,
 } from "@/lib/constants";
 import { getSql } from "@/lib/db";
-import { FramedRecord, LeaderboardSnapshot, TemplateConfig, UnitName } from "@/lib/types";
+import {
+  AppSettings,
+  FamilyTextLayout,
+  FramedRecord,
+  LeaderboardSnapshot,
+  ManualUnitCountMap,
+  TemplateConfig,
+  TextLayout,
+  UnitName,
+} from "@/lib/types";
 
 type TemplateRow = {
   id: string;
@@ -17,6 +26,7 @@ type TemplateRow = {
   updated_at: string | Date;
   unit_text: unknown;
   counter_text: unknown;
+  family_text: unknown;
   frame_viewport: unknown;
 };
 
@@ -29,6 +39,33 @@ type FrameRow = {
 
 let schemaReady: Promise<void> | null = null;
 
+function defaultAppSettings(): AppSettings {
+  return {
+    sahithyolsavDate: null,
+  };
+}
+
+function normalizeAppSettings(input: unknown): AppSettings {
+  if (!input || typeof input !== "object") {
+    return defaultAppSettings();
+  }
+
+  const settings = input as Partial<AppSettings>;
+  const rawDate = typeof settings.sahithyolsavDate === "string" ? settings.sahithyolsavDate.trim() : "";
+  if (!rawDate) {
+    return defaultAppSettings();
+  }
+
+  const parsed = new Date(rawDate);
+  if (Number.isNaN(parsed.getTime())) {
+    return defaultAppSettings();
+  }
+
+  return {
+    sahithyolsavDate: parsed.toISOString(),
+  };
+}
+
 function normalizeTemplateId(templateId: string): string {
   return templateId === LEGACY_FAMILY_TEMPLATE_ID ? FAMILY_FRAME_TEMPLATE_ID : templateId;
 }
@@ -37,11 +74,74 @@ function toIso(value: string | Date): string {
   return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
 }
 
-function parseJsonField<T>(value: unknown): T {
-  if (typeof value === "string") {
-    return JSON.parse(value) as T;
+function parseJsonField<T>(value: unknown, fallback: T): T {
+  if (value === null || value === undefined) {
+    return fallback;
   }
-  return value as T;
+
+  try {
+    if (typeof value === "string") {
+      return JSON.parse(value) as T;
+    }
+    return value as T;
+  } catch {
+    return fallback;
+  }
+}
+
+function normalizeTextLayout(current: TextLayout, fallback: TextLayout): TextLayout {
+  return {
+    ...fallback,
+    ...current,
+    backgroundColor: current.backgroundColor ?? fallback.backgroundColor,
+    showBackground: current.showBackground ?? fallback.showBackground,
+    textAlign: current.textAlign ?? fallback.textAlign,
+    borderRadius: current.borderRadius ?? fallback.borderRadius,
+  };
+}
+
+function normalizeFamilyTextLayout(
+  current: Partial<FamilyTextLayout> | undefined,
+  fallback: FamilyTextLayout,
+): FamilyTextLayout {
+  return {
+    ...fallback,
+    ...current,
+    backgroundColor: current?.backgroundColor ?? fallback.backgroundColor,
+    showBackground: current?.showBackground ?? fallback.showBackground,
+    textAlign: current?.textAlign ?? fallback.textAlign,
+    borderRadius: current?.borderRadius ?? fallback.borderRadius,
+  };
+}
+
+function normalizeTemplateShape(template: TemplateConfig): TemplateConfig {
+  const defaults = getDefaultTemplate();
+  return {
+    ...template,
+    unitText: normalizeTextLayout(template.unitText, defaults.unitText),
+    counterText: normalizeTextLayout(template.counterText, defaults.counterText),
+    familyText: normalizeFamilyTextLayout(template.familyText, defaults.familyText),
+  };
+}
+
+function buildZeroManualCounts(): ManualUnitCountMap {
+  return Object.fromEntries(UNIT_LIST.map((unit) => [unit, 0])) as ManualUnitCountMap;
+}
+
+function normalizeManualCounts(input: unknown): ManualUnitCountMap {
+  const base = buildZeroManualCounts();
+  if (!input || typeof input !== "object") {
+    return base;
+  }
+
+  const rows = input as Record<string, unknown>;
+  for (const unit of UNIT_LIST) {
+    const value = rows[unit];
+    const numeric = Number(value);
+    base[unit] = Number.isFinite(numeric) ? Math.max(0, Math.floor(numeric)) : 0;
+  }
+
+  return base;
 }
 
 async function ensureSchema(): Promise<void> {
@@ -62,8 +162,25 @@ async function ensureSchema(): Promise<void> {
         updated_at TIMESTAMPTZ NOT NULL,
         unit_text JSONB NOT NULL,
         counter_text JSONB NOT NULL,
+        family_text JSONB NOT NULL,
         frame_viewport JSONB NOT NULL
       );
+    `;
+
+    await sql`
+      ALTER TABLE templates
+      ADD COLUMN IF NOT EXISTS family_text JSONB;
+    `;
+
+    await sql`
+      UPDATE templates
+      SET family_text = ${JSON.stringify(getDefaultTemplate().familyText)}::jsonb
+      WHERE family_text IS NULL;
+    `;
+
+    await sql`
+      ALTER TABLE templates
+      ALTER COLUMN family_text SET NOT NULL;
     `;
 
     await sql`
@@ -83,15 +200,37 @@ async function ensureSchema(): Promise<void> {
         template_id TEXT NOT NULL REFERENCES templates(id) ON DELETE CASCADE,
         unit TEXT NOT NULL,
         frame_id TEXT NOT NULL,
+        family_name TEXT,
         counter INTEGER NOT NULL,
         created_at TIMESTAMPTZ NOT NULL
       );
     `;
 
     await sql`
+      ALTER TABLE framed_records
+      ADD COLUMN IF NOT EXISTS family_name TEXT;
+    `;
+
+    await sql`
       CREATE TABLE IF NOT EXISTS app_counters (
         id SMALLINT PRIMARY KEY,
         global_counter INTEGER NOT NULL DEFAULT 0
+      );
+    `;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS app_settings (
+        id SMALLINT PRIMARY KEY,
+        settings JSONB NOT NULL
+      );
+    `;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS unit_manual_counts (
+        template_id TEXT NOT NULL REFERENCES templates(id) ON DELETE CASCADE,
+        unit TEXT NOT NULL,
+        manual_count INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (template_id, unit)
       );
     `;
 
@@ -111,6 +250,12 @@ async function ensureSchema(): Promise<void> {
       ON CONFLICT (id) DO NOTHING;
     `;
 
+    await sql`
+      INSERT INTO app_settings (id, settings)
+      VALUES (1, ${JSON.stringify(defaultAppSettings())}::jsonb)
+      ON CONFLICT (id) DO NOTHING;
+    `;
+
     const defaultTemplate = getDefaultTemplate();
     await sql`
       INSERT INTO templates (
@@ -122,6 +267,7 @@ async function ensureSchema(): Promise<void> {
         updated_at,
         unit_text,
         counter_text,
+        family_text,
         frame_viewport
       ) VALUES (
         ${defaultTemplate.id},
@@ -132,10 +278,19 @@ async function ensureSchema(): Promise<void> {
         ${defaultTemplate.updatedAt},
         ${JSON.stringify(defaultTemplate.unitText)},
         ${JSON.stringify(defaultTemplate.counterText)},
+        ${JSON.stringify(defaultTemplate.familyText)},
         ${JSON.stringify(defaultTemplate.frameViewport)}
       )
       ON CONFLICT (id) DO NOTHING;
     `;
+
+    for (const unit of UNIT_LIST) {
+      await sql`
+        INSERT INTO unit_manual_counts (template_id, unit, manual_count)
+        VALUES (${defaultTemplate.id}, ${unit}, 0)
+        ON CONFLICT (template_id, unit) DO NOTHING;
+      `;
+    }
   })();
 
   return schemaReady;
@@ -153,6 +308,7 @@ async function getTemplateById(templateId: string): Promise<TemplateConfig | nul
       updated_at,
       unit_text,
       counter_text,
+      family_text,
       frame_viewport
     FROM templates
     WHERE id = ${templateId}
@@ -171,16 +327,32 @@ async function getTemplateById(templateId: string): Promise<TemplateConfig | nul
     ORDER BY sort_order ASC, created_at ASC
   `) as FrameRow[];
 
-  return {
+  const defaults = getDefaultTemplate();
+  const frameViewport = parseJsonField<{ width: number; height: number }>(
+    row.frame_viewport,
+    defaults.frameViewport,
+  );
+
+  const normalized = {
     id: row.id,
     name: row.name,
     slug: row.slug,
     createdBy: row.created_by,
     createdAt: toIso(row.created_at),
     updatedAt: toIso(row.updated_at),
-    unitText: parseJsonField(row.unit_text),
-    counterText: parseJsonField(row.counter_text),
-    frameViewport: parseJsonField(row.frame_viewport),
+    unitText: normalizeTextLayout(parseJsonField(row.unit_text, defaults.unitText), defaults.unitText),
+    counterText: normalizeTextLayout(
+      parseJsonField(row.counter_text, defaults.counterText),
+      defaults.counterText,
+    ),
+    familyText: normalizeFamilyTextLayout(
+      parseJsonField<Partial<FamilyTextLayout> | undefined>(row.family_text, undefined),
+      defaults.familyText,
+    ),
+    frameViewport: {
+      width: Math.max(720, Number(frameViewport.width ?? defaults.frameViewport.width)),
+      height: Math.max(900, Number(frameViewport.height ?? defaults.frameViewport.height)),
+    },
     frames: frameRows.map((frame) => ({
       id: frame.id,
       name: frame.name,
@@ -188,6 +360,8 @@ async function getTemplateById(templateId: string): Promise<TemplateConfig | nul
       createdAt: toIso(frame.created_at),
     })),
   };
+
+  return normalized;
 }
 
 export async function getTemplate(templateId = FAMILY_FRAME_TEMPLATE_ID): Promise<TemplateConfig> {
@@ -207,6 +381,7 @@ export async function saveTemplate(nextTemplate: TemplateConfig): Promise<Templa
   await ensureSchema();
   const sql = getSql();
 
+  const normalizedInput = normalizeTemplateShape(nextTemplate);
   const normalizedId = normalizeTemplateId(nextTemplate.id);
   const existingRows = (await sql`
     SELECT created_at
@@ -217,7 +392,7 @@ export async function saveTemplate(nextTemplate: TemplateConfig): Promise<Templa
 
   const createdAt = existingRows[0] ? toIso(existingRows[0].created_at) : nextTemplate.createdAt;
   const merged: TemplateConfig = {
-    ...nextTemplate,
+    ...normalizedInput,
     id: normalizedId,
     slug: nextTemplate.slug || normalizedId,
     createdAt,
@@ -234,6 +409,7 @@ export async function saveTemplate(nextTemplate: TemplateConfig): Promise<Templa
       updated_at,
       unit_text,
       counter_text,
+      family_text,
       frame_viewport
     ) VALUES (
       ${merged.id},
@@ -244,6 +420,7 @@ export async function saveTemplate(nextTemplate: TemplateConfig): Promise<Templa
       ${merged.updatedAt},
       ${JSON.stringify(merged.unitText)},
       ${JSON.stringify(merged.counterText)},
+      ${JSON.stringify(merged.familyText)},
       ${JSON.stringify(merged.frameViewport)}
     )
     ON CONFLICT (id) DO UPDATE
@@ -253,6 +430,7 @@ export async function saveTemplate(nextTemplate: TemplateConfig): Promise<Templa
       updated_at = EXCLUDED.updated_at,
       unit_text = EXCLUDED.unit_text,
       counter_text = EXCLUDED.counter_text,
+        family_text = EXCLUDED.family_text,
       frame_viewport = EXCLUDED.frame_viewport
   `;
 
@@ -286,6 +464,7 @@ export async function recordFraming(input: {
   templateId: string;
   unit: UnitName;
   frameId: string;
+  familyName?: string;
 }): Promise<FramedRecord> {
   await ensureSchema();
   const sql = getSql();
@@ -320,17 +499,19 @@ export async function recordFraming(input: {
     templateId: normalizedTemplateId,
     unit: input.unit,
     frameId: input.frameId,
+    familyName: input.familyName?.trim() ? input.familyName.trim() : undefined,
     counter: nextCounter,
     createdAt: new Date().toISOString(),
   };
 
   await sql`
-    INSERT INTO framed_records (id, template_id, unit, frame_id, counter, created_at)
+    INSERT INTO framed_records (id, template_id, unit, frame_id, family_name, counter, created_at)
     VALUES (
       ${record.id},
       ${record.templateId},
       ${record.unit},
       ${record.frameId},
+      ${record.familyName ?? null},
       ${record.counter},
       ${record.createdAt}
     )
@@ -360,8 +541,14 @@ export async function getLeaderboard(
     WHERE template_id = ${template.id}
   `) as Array<{ total: number }>;
 
+  const manualRows = (await sql`
+    SELECT unit, manual_count
+    FROM unit_manual_counts
+    WHERE template_id = ${template.id}
+  `) as Array<{ unit: string; manual_count: number }>;
+
   const recentRows = (await sql`
-    SELECT id, template_id, unit, frame_id, counter, created_at
+    SELECT id, template_id, unit, frame_id, family_name, counter, created_at
     FROM framed_records
     WHERE template_id = ${template.id}
     ORDER BY created_at DESC
@@ -371,6 +558,7 @@ export async function getLeaderboard(
     template_id: string;
     unit: UnitName;
     frame_id: string;
+    family_name: string | null;
     counter: number;
     created_at: string | Date;
   }>;
@@ -379,9 +567,23 @@ export async function getLeaderboard(
     totalsByUnit.map((entry) => [entry.unit.toLowerCase(), Number(entry.count) || 0]),
   );
 
-  const unitTotals = UNIT_LIST.map((unit) => ({
+  const manualByUnit = new Map(
+    manualRows.map((entry) => [entry.unit.toLowerCase(), Number(entry.manual_count) || 0]),
+  );
+
+  const liveUnitTotals = UNIT_LIST.map((unit) => ({
     unit,
     count: byUnit.get(unit.toLowerCase()) ?? 0,
+  }));
+
+  const manualUnitTotals = UNIT_LIST.map((unit) => ({
+    unit,
+    count: manualByUnit.get(unit.toLowerCase()) ?? 0,
+  }));
+
+  const unitTotals = UNIT_LIST.map((unit, index) => ({
+    unit,
+    count: liveUnitTotals[index].count + manualUnitTotals[index].count,
   })).sort((a, b) => b.count - a.count || a.unit.localeCompare(b.unit));
 
   const recent: FramedRecord[] = recentRows.map((row) => ({
@@ -389,6 +591,7 @@ export async function getLeaderboard(
     templateId: row.template_id,
     unit: UNIT_LIST.includes(row.unit) ? row.unit : UNIT_LIST[0],
     frameId: row.frame_id,
+    familyName: row.family_name ?? undefined,
     counter: Number(row.counter),
     createdAt: toIso(row.created_at),
   }));
@@ -396,8 +599,12 @@ export async function getLeaderboard(
   return {
     templateId: template.id,
     templateName: template.name,
-    total: Number(totalRows[0]?.total ?? 0),
+    total:
+      Number(totalRows[0]?.total ?? 0) +
+      manualUnitTotals.reduce((sum, entry) => sum + entry.count, 0),
     unitTotals,
+    liveUnitTotals,
+    manualUnitTotals,
     recent,
   };
 }
@@ -412,4 +619,87 @@ export async function getCurrentGlobalCounter(): Promise<number> {
     LIMIT 1
   `) as Array<{ global_counter: number }>;
   return Number(rows[0]?.global_counter ?? 0);
+}
+
+export async function getManualUnitCounts(
+  templateId = FAMILY_FRAME_TEMPLATE_ID,
+): Promise<ManualUnitCountMap> {
+  await ensureSchema();
+  const sql = getSql();
+  const normalizedTemplateId = normalizeTemplateId(templateId);
+
+  const rows = (await sql`
+    SELECT unit, manual_count
+    FROM unit_manual_counts
+    WHERE template_id = ${normalizedTemplateId}
+  `) as Array<{ unit: string; manual_count: number }>;
+
+  const raw = Object.fromEntries(
+    rows.map((row) => [row.unit, Number(row.manual_count) || 0]),
+  );
+  return normalizeManualCounts(raw);
+}
+
+export async function setManualUnitCounts(input: {
+  templateId: string;
+  counts: ManualUnitCountMap;
+}): Promise<ManualUnitCountMap> {
+  await ensureSchema();
+  const sql = getSql();
+  const normalizedTemplateId = normalizeTemplateId(input.templateId);
+  const nextCounts = normalizeManualCounts(input.counts);
+
+  for (const unit of UNIT_LIST) {
+    await sql`
+      INSERT INTO unit_manual_counts (template_id, unit, manual_count)
+      VALUES (${normalizedTemplateId}, ${unit}, ${nextCounts[unit]})
+      ON CONFLICT (template_id, unit) DO UPDATE
+      SET manual_count = EXCLUDED.manual_count
+    `;
+  }
+
+  const liveRows = (await sql`
+    SELECT COUNT(*)::int AS total
+    FROM framed_records
+    WHERE template_id = ${normalizedTemplateId}
+  `) as Array<{ total: number }>;
+
+  const manualTotal = Object.values(nextCounts).reduce((sum, value) => sum + value, 0);
+  const nextGlobalCounter = Number(liveRows[0]?.total ?? 0) + manualTotal;
+
+  await sql`
+    UPDATE app_counters
+    SET global_counter = ${nextGlobalCounter}
+    WHERE id = 1
+  `;
+
+  return nextCounts;
+}
+
+export async function getAppSettings(): Promise<AppSettings> {
+  await ensureSchema();
+  const sql = getSql();
+  const rows = (await sql`
+    SELECT settings
+    FROM app_settings
+    WHERE id = 1
+    LIMIT 1
+  `) as Array<{ settings: unknown }>;
+
+  return normalizeAppSettings(parseJsonField(rows[0]?.settings, defaultAppSettings()));
+}
+
+export async function setAppSettings(input: AppSettings): Promise<AppSettings> {
+  await ensureSchema();
+  const sql = getSql();
+  const normalized = normalizeAppSettings(input);
+
+  await sql`
+    INSERT INTO app_settings (id, settings)
+    VALUES (1, ${JSON.stringify(normalized)}::jsonb)
+    ON CONFLICT (id) DO UPDATE
+    SET settings = EXCLUDED.settings
+  `;
+
+  return normalized;
 }

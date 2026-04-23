@@ -18,6 +18,15 @@ export interface TextLayout {
   fontFamily: string;
   fontWeight: number;
   color: string;
+  backgroundColor?: string;
+  showBackground?: boolean;
+  textAlign?: "left" | "center" | "right";
+  borderRadius?: number;
+}
+
+export interface FamilyTextLayout extends TextLayout {
+  width: number;
+  height: number;
 }
 
 export interface FrameVariant {
@@ -37,6 +46,7 @@ export interface TemplateConfig {
   frames: FrameVariant[];
   unitText: TextLayout;
   counterText: TextLayout;
+  familyText: FamilyTextLayout;
   frameViewport: {
     width: number;
     height: number;
@@ -49,6 +59,7 @@ export interface FramedRecord {
   unit: UnitName;
   counter: number;
   frameId: string;
+  familyName?: string;
   createdAt: string;
 }
 
@@ -57,10 +68,18 @@ export interface LeaderboardEntry {
   count: number;
 }
 
+export type ManualUnitCountMap = Record<UnitName, number>;
+
+export interface AppSettings {
+  sahithyolsavDate: string | null;
+}
+
 export interface AppStore {
   templates: Record<string, TemplateConfig>;
   framedRecords: FramedRecord[];
   globalCounter: number;
+  manualUnitCountsByTemplate: Record<string, ManualUnitCountMap>;
+  appSettings: AppSettings;
 }
 
 export interface LeaderboardSnapshot {
@@ -68,5 +87,7 @@ export interface LeaderboardSnapshot {
   templateName: string;
   total: number;
   unitTotals: LeaderboardEntry[];
+  liveUnitTotals: LeaderboardEntry[];
+  manualUnitTotals: LeaderboardEntry[];
   recent: FramedRecord[];
 }

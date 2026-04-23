@@ -12,13 +12,31 @@ import { copyToClipboard, fileToDataUrl } from "@/lib/client-utils";
 import { LeaderboardSnapshot, TemplateConfig, TextLayout } from "@/lib/types";
 import { FrameCanvas } from "@/components/FrameCanvas";
 import { FrameUploader } from "@/components/FrameUploader";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowUp, ArrowDown, Trash2, Copy, Save, RotateCcw, Link2, Plus, Image as ImageIcon, Type, LayoutTemplate } from "lucide-react";
+import {
+  ArrowUp,
+  ArrowDown,
+  Trash2,
+  Copy,
+  Save,
+  RotateCcw,
+  Link2,
+  Image as ImageIcon,
+  Type,
+  LayoutTemplate,
+  BarChart3,
+  Users,
+  Crown,
+  Layers,
+  ExternalLink,
+  CheckCircle2,
+  AlertCircle,
+  Wand2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 interface AdminPayload {
@@ -26,7 +44,7 @@ interface AdminPayload {
   leaderboard: LeaderboardSnapshot;
 }
 
-type TextKey = "unit" | "counter";
+type TextKey = "unit" | "counter" | "family";
 
 const defaultPhotoTransform = { x: 0, y: 0, scale: 1 };
 
@@ -34,6 +52,7 @@ export function AdminDashboard() {
   const [template, setTemplate] = useState<TemplateConfig | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardSnapshot | null>(null);
   const [selectedFrameId, setSelectedFrameId] = useState<string>("");
+  const [activePanel, setActivePanel] = useState<"template" | "typography">("template");
   const [activeText, setActiveText] = useState<TextKey>("unit");
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
   const [photoTransform, setPhotoTransform] = useState(defaultPhotoTransform);
@@ -84,7 +103,7 @@ export function AdminDashboard() {
     }
 
     const update = () => {
-      setPreviewWidth(Math.max(300, Math.min(580, wrap.clientWidth)));
+      setPreviewWidth(Math.max(240, Math.min(620, wrap.clientWidth)));
     };
 
     update();
@@ -114,10 +133,24 @@ export function AdminDashboard() {
     if (!template) {
       return getDefaultTemplate().unitText;
     }
-    return activeText === "unit" ? template.unitText : template.counterText;
+    if (activeText === "unit") {
+      return template.unitText;
+    }
+    if (activeText === "counter") {
+      return template.counterText;
+    }
+    return template.familyText;
   }, [activeText, template]);
 
+  const currentBackgroundColorInput = useMemo(() => {
+    const value = currentText.backgroundColor ?? "";
+    return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value) ? value : "#334155";
+  }, [currentText.backgroundColor]);
+
   const topUnit = leaderboard?.unitTotals[0];
+  const totalFramed = leaderboard?.total ?? 0;
+  const activeUnits = leaderboard?.unitTotals.filter((item) => item.count > 0).length ?? 0;
+  const frameCount = template?.frames.length ?? 0;
 
   const setTextLayout = (key: TextKey, next: TextLayout) => {
     setTemplate((prev) => {
@@ -129,6 +162,7 @@ export function AdminDashboard() {
         ...prev,
         unitText: key === "unit" ? next : prev.unitText,
         counterText: key === "counter" ? next : prev.counterText,
+        familyText: key === "family" ? { ...prev.familyText, ...next } : prev.familyText,
       };
     });
   };
@@ -139,13 +173,19 @@ export function AdminDashboard() {
         return prev;
       }
 
-      const target = activeText === "unit" ? prev.unitText : prev.counterText;
+      const target =
+        activeText === "unit"
+          ? prev.unitText
+          : activeText === "counter"
+            ? prev.counterText
+            : prev.familyText;
       const next = { ...target, ...patch };
 
       return {
         ...prev,
         unitText: activeText === "unit" ? next : prev.unitText,
         counterText: activeText === "counter" ? next : prev.counterText,
+        familyText: activeText === "family" ? { ...prev.familyText, ...next } : prev.familyText,
       };
     });
   };
@@ -258,8 +298,27 @@ export function AdminDashboard() {
         ...prev,
         unitText: defaults.unitText,
         counterText: defaults.counterText,
+        familyText: defaults.familyText,
       };
     });
+  };
+
+  const applyVisionPreset = () => {
+    const defaults = getDefaultTemplate();
+    setTemplate((prev) => {
+      if (!prev) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        unitText: defaults.unitText,
+        counterText: defaults.counterText,
+        familyText: defaults.familyText,
+      };
+    });
+    setActiveText("unit");
+    toast.success("Vision preset applied. Review and save when ready.");
   };
 
   const baseLink = origin
@@ -272,8 +331,19 @@ export function AdminDashboard() {
     }
 
     const ok = await copyToClipboard(link);
-    if(ok) toast.success(`Link for ${unit} copied!`)
-    else toast.error("Could not copy link on this browser.");
+    if (ok) {
+      toast.success(`Link for ${unit} copied!`);
+    } else {
+      toast.error("Could not copy link on this browser.");
+    }
+  };
+
+  const openLink = (link: string) => {
+    if (!link) {
+      return;
+    }
+
+    window.open(link, "_blank", "noopener,noreferrer");
   };
 
   if (!template) {
@@ -288,159 +358,275 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="flex flex-col gap-8 pb-10">
-      {/* Stats row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-none shadow-sm bg-white">
-          <CardContent className="p-6 flex flex-col justify-between h-full">
-            <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Photos Framed</p>
-            <h3 className="text-3xl font-bold tracking-tight text-indigo-600">{leaderboard?.total ?? 0}</h3>
-          </CardContent>
-        </Card>
-        
-        <Card className="border-none shadow-sm bg-white">
-          <CardContent className="p-6 flex flex-col justify-between h-full">
-            <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Active Units</p>
-            <h3 className="text-3xl font-bold tracking-tight text-emerald-600">
-              {leaderboard?.unitTotals.filter((item) => item.count > 0).length ?? 0}
-            </h3>
-          </CardContent>
-        </Card>
-        
-        <Card className="border-none shadow-sm bg-white">
-          <CardContent className="p-6 flex flex-col justify-between h-full">
-            <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Leading Unit</p>
-            {topUnit ? (
-              <div className="flex items-baseline gap-2">
-                <h3 className="text-3xl font-bold tracking-tight text-amber-600 truncate max-w-[200px]">{topUnit.unit}</h3>
-                <span className="text-sm font-semibold text-slate-400">({topUnit.count})</span>
+    <div className="flex flex-col gap-6 pb-10 xl:gap-8">
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Card className="border-slate-200/80 bg-white shadow-sm">
+          <CardContent className="p-5 sm:p-6">
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Photos Framed</p>
+              <div className="rounded-xl bg-indigo-50 p-2 text-indigo-600">
+                <BarChart3 className="h-4 w-4" />
               </div>
+            </div>
+            <p className="mt-5 text-3xl font-semibold tracking-tight text-slate-900">{totalFramed}</p>
+            <p className="mt-1 text-xs text-slate-500">Total generated framed photos</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-slate-200/80 bg-white shadow-sm">
+          <CardContent className="p-5 sm:p-6">
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Active Units</p>
+              <div className="rounded-xl bg-emerald-50 p-2 text-emerald-600">
+                <Users className="h-4 w-4" />
+              </div>
+            </div>
+            <p className="mt-5 text-3xl font-semibold tracking-tight text-slate-900">{activeUnits}</p>
+            <p className="mt-1 text-xs text-slate-500">Units with at least one framed post</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-slate-200/80 bg-white shadow-sm">
+          <CardContent className="p-5 sm:p-6">
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Leading Unit</p>
+              <div className="rounded-xl bg-amber-50 p-2 text-amber-600">
+                <Crown className="h-4 w-4" />
+              </div>
+            </div>
+            {topUnit ? (
+              <>
+                <p className="mt-5 truncate text-3xl font-semibold tracking-tight text-slate-900">{topUnit.unit}</p>
+                <p className="mt-1 text-xs text-slate-500">{topUnit.count} framed photo(s)</p>
+              </>
             ) : (
-              <h3 className="text-xl font-bold tracking-tight text-slate-400">No activity yet</h3>
+              <>
+                <p className="mt-5 text-2xl font-semibold tracking-tight text-slate-400">No activity</p>
+                <p className="mt-1 text-xs text-slate-500">Waiting for first framed upload</p>
+              </>
             )}
           </CardContent>
         </Card>
+
+        <Card className="border-slate-200/80 bg-white shadow-sm">
+          <CardContent className="p-5 sm:p-6">
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Frames Uploaded</p>
+              <div className="rounded-xl bg-sky-50 p-2 text-sky-600">
+                <Layers className="h-4 w-4" />
+              </div>
+            </div>
+            <p className="mt-5 text-3xl font-semibold tracking-tight text-slate-900">{frameCount}</p>
+            {frameCount > 0 ? (
+              <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                Template variants ready to publish
+              </p>
+            ) : (
+              <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
+                <AlertCircle className="h-3.5 w-3.5 text-amber-600" />
+                Upload at least one frame to go live
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+
+      <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-slate-800">Workspace Actions</p>
+          <p className="text-xs text-slate-500">Save after adjusting labels, frame order, and placements.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" onClick={applyVisionPreset} className="bg-white">
+            <Wand2 className="mr-2 h-4 w-4" />
+            Apply Vision Preset
+          </Button>
+          <Button variant="outline" onClick={resetTextLayout} className="bg-white">
+            <RotateCcw className="mr-2 h-4 w-4" />
+            Reset Typography
+          </Button>
+          <Button onClick={saveTemplate} disabled={saving} className="gap-2 shadow-sm">
+            {saving ? (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            {saving ? "Saving..." : "Save Template"}
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        {/* Left Column - Tools */}
-        <div className="lg:col-span-7 flex flex-col gap-6">
-          <Tabs defaultValue="template" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-slate-100/80 p-1 mb-4 h-auto">
-              <TabsTrigger value="template" className="py-2.5 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm rounded-md flex items-center gap-2">
-                <LayoutTemplate className="w-4 h-4" /> Template & Frames
-              </TabsTrigger>
-              <TabsTrigger value="typography" className="py-2.5 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm rounded-md flex items-center gap-2">
-                <Type className="w-4 h-4" /> Text Settings
-              </TabsTrigger>
-            </TabsList>
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(360px,440px)]">
+        <div className="order-2 flex flex-col gap-6 xl:order-1">
+          <div className="inline-flex w-full max-w-md rounded-lg bg-slate-100/90 p-1">
+            <button
+              type="button"
+              className={`flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition ${
+                activePanel === "template" ? "bg-white text-primary shadow-sm" : "text-slate-600 hover:text-slate-900"
+              }`}
+              onClick={() => setActivePanel("template")}
+            >
+              <LayoutTemplate className="h-4 w-4" />
+              Template & Frames
+            </button>
+            <button
+              type="button"
+              className={`flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition ${
+                activePanel === "typography" ? "bg-white text-primary shadow-sm" : "text-slate-600 hover:text-slate-900"
+              }`}
+              onClick={() => setActivePanel("typography")}
+            >
+              <Type className="h-4 w-4" />
+              Text Settings
+            </button>
+          </div>
 
-            <TabsContent value="template" className="mt-0 outline-none">
-              <Card className="border-slate-200 shadow-sm bg-white origin-top animate-in zoom-in-95 duration-200">
-                <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-5">
-                  <CardTitle className="text-lg font-bold">Frames Editor</CardTitle>
-                  <CardDescription>Upload the frame overlay used in the user facing workflow.</CardDescription>
-                </CardHeader>
-                <CardContent className="p-6 flex flex-col gap-6">
-                  
-                  <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/50 overflow-hidden transition-colors hover:bg-slate-50 hover:border-primary/50">
-                    <FrameUploader onFramesAdd={addFrames} />
-                  </div>
+          {activePanel === "template" ? (
+            <Card className="border-slate-200 bg-white shadow-sm">
+              <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-4">
+                <CardTitle className="text-lg font-semibold text-slate-900">Frames Editor</CardTitle>
+                <CardDescription>
+                  Upload transparent overlays and choose which frame is active in the live preview.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5 p-5 sm:p-6">
+                <FrameUploader onFramesAdd={addFrames} />
 
-                  {template.frames.length > 0 ? (
-                    <div className="flex flex-col gap-3">
-                      <Label className="text-sm font-semibold text-slate-700">Uploaded Frames</Label>
-                      <div className="flex flex-col gap-2">
+                {template.frames.length > 0 ? (
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold text-slate-700">Uploaded Frames</Label>
+                    <div className="space-y-2">
                       {template.frames.map((frame, index) => (
-                        <div 
-                          key={frame.id} 
-                          className={`flex items-center justify-between p-3 rounded-xl border transition-all ${frame.id === selectedFrame?.id ? 'border-primary/40 bg-primary/5 shadow-sm ring-1 ring-primary/20' : 'border-slate-200 bg-white hover:border-slate-300'}`}
+                        <div
+                          key={frame.id}
+                          className={`flex flex-col gap-3 rounded-xl border p-3 transition-all sm:flex-row sm:items-center sm:justify-between ${
+                            frame.id === selectedFrame?.id
+                              ? "border-primary/40 bg-primary/5 shadow-sm ring-1 ring-primary/20"
+                              : "border-slate-200 bg-white hover:border-slate-300"
+                          }`}
                         >
-                          <button 
-                            type="button" 
-                            className="flex-1 text-left font-medium text-sm flex items-center gap-3" 
+                          <button
+                            type="button"
+                            className="flex flex-1 items-center gap-3 text-left text-sm font-medium"
                             onClick={() => setSelectedFrameId(frame.id)}
                           >
-                            <div className={`w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold ${frame.id === selectedFrame?.id ? 'bg-primary text-primary-foreground' : 'bg-slate-100 text-slate-500'}`}>
+                            <div
+                              className={`flex h-7 w-7 items-center justify-center rounded-md text-xs font-bold ${
+                                frame.id === selectedFrame?.id
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-slate-100 text-slate-500"
+                              }`}
+                            >
                               {index + 1}
                             </div>
-                            <span className={frame.id === selectedFrame?.id ? 'text-primary' : 'text-slate-700'}>{frame.name}</span>
+                            <span
+                              className={`truncate ${
+                                frame.id === selectedFrame?.id ? "text-primary" : "text-slate-700"
+                              }`}
+                            >
+                              {frame.name}
+                            </span>
                           </button>
-                          
-                          <div className="flex items-center gap-1 ml-4 bg-slate-50 rounded-lg p-1 border">
-                            <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md hover:bg-white hover:text-slate-900" onClick={() => moveFrame(index, index - 1)} disabled={index === 0}>
-                              <ArrowUp className="w-3.5 h-3.5" />
+
+                          <div className="flex items-center gap-1 rounded-lg border bg-slate-50 p-1">
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="hover:bg-white hover:text-slate-900"
+                              onClick={() => moveFrame(index, index - 1)}
+                              disabled={index === 0}
+                            >
+                              <ArrowUp className="h-3.5 w-3.5" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md hover:bg-white hover:text-slate-900" onClick={() => moveFrame(index, index + 1)} disabled={index === template.frames.length - 1}>
-                              <ArrowDown className="w-3.5 h-3.5" />
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="hover:bg-white hover:text-slate-900"
+                              onClick={() => moveFrame(index, index + 1)}
+                              disabled={index === template.frames.length - 1}
+                            >
+                              <ArrowDown className="h-3.5 w-3.5" />
                             </Button>
-                            <div className="w-px h-4 bg-slate-200 mx-1"></div>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => removeFrame(frame.id)}>
-                              <Trash2 className="w-3.5 h-3.5" />
+                            <div className="mx-1 h-4 w-px bg-slate-200"></div>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                              onClick={() => removeFrame(frame.id)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           </div>
                         </div>
                       ))}
-                      </div>
                     </div>
-                  ) : (
-                    <div className="p-4 rounded-xl bg-destructive/10 text-destructive text-sm font-medium flex items-start gap-2">
-                       No frame uploaded yet. Users can share only after one frame is uploaded and saved.
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <div>
+                      <p className="font-semibold">No frame uploaded yet</p>
+                      <p className="mt-1 text-sm">
+                        Users can generate shares only after at least one frame is uploaded and saved.
+                      </p>
                     </div>
-                  )}
-                </CardContent>
-                <CardFooter className="bg-slate-50/50 border-t border-slate-100 p-4 px-6 flex justify-between rounded-b-xl">
-                  <Button variant="outline" onClick={resetTextLayout} size="sm" className="bg-white border-slate-200">
-                    <RotateCcw className="w-4 h-4 mr-2 text-slate-500" />
-                    Reset Typography
-                  </Button>
-                  <Button onClick={saveTemplate} disabled={saving} size="sm" className="shadow-sm gap-2">
-                    {saving ? (
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                    ) : (
-                      <Save className="w-4 h-4" />
-                    )}
-                    {saving ? "Saving..." : "Save Template"}
-                  </Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="typography" className="mt-0 outline-none">
-              <Card className="border-slate-200 shadow-sm bg-white origin-top animate-in zoom-in-95 duration-200">
-                <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-5">
-                  <CardTitle className="text-lg font-bold">Typography</CardTitle>
-                  <CardDescription>Drag text directly on preview or configure it precisely here.</CardDescription>
-                </CardHeader>
-                <CardContent className="p-6">
-                  
-                  <div className="flex bg-slate-100/80 p-1 rounded-lg mb-6 sticky top-0 z-10 w-max">
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border-slate-200 bg-white shadow-sm">
+              <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-4">
+                <CardTitle className="text-lg font-semibold text-slate-900">Typography Controls</CardTitle>
+                <CardDescription>
+                  Fine-tune unit and counter labels. You can also drag text directly inside the preview.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-5 sm:p-6">
+                  <div className="mb-6 inline-flex rounded-lg bg-slate-100/90 p-1">
                     <button
-                        type="button"
-                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeText === "unit" ? "bg-white text-primary shadow-sm ring-1 ring-black/5" : "text-slate-600 hover:text-slate-900"}`}
-                        onClick={() => setActiveText("unit")}
-                      >
-                        Unit Text
+                      type="button"
+                      className={`rounded-md px-4 py-1.5 text-sm font-medium transition-all ${
+                        activeText === "unit"
+                          ? "bg-white text-primary shadow-sm ring-1 ring-black/5"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                      onClick={() => setActiveText("unit")}
+                    >
+                      Unit Text
                     </button>
                     <button
-                        type="button"
-                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeText === "counter" ? "bg-white text-primary shadow-sm ring-1 ring-black/5" : "text-slate-600 hover:text-slate-900"}`}
-                        onClick={() => setActiveText("counter")}
-                      >
-                        Counter Text
+                      type="button"
+                      className={`rounded-md px-4 py-1.5 text-sm font-medium transition-all ${
+                        activeText === "counter"
+                          ? "bg-white text-primary shadow-sm ring-1 ring-black/5"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                      onClick={() => setActiveText("counter")}
+                    >
+                      Counter Text
+                    </button>
+                    <button
+                      type="button"
+                      className={`rounded-md px-4 py-1.5 text-sm font-medium transition-all ${
+                        activeText === "family"
+                          ? "bg-white text-primary shadow-sm ring-1 ring-black/5"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                      onClick={() => setActiveText("family")}
+                    >
+                      Family Box
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
-                    
+                  <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Font Family</Label>
-                      <Select 
-                        value={currentText.fontFamily} 
-                        onValueChange={(val) => patchActiveText({ fontFamily: val })}
-                      >
-                        <SelectTrigger className="w-full bg-slate-50/50">
+                      <Label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                        Font Family
+                      </Label>
+                      <Select value={currentText.fontFamily} onValueChange={(val) => patchActiveText({ fontFamily: val })}>
+                        <SelectTrigger className="w-full bg-slate-50/60">
                           <SelectValue placeholder="Select font" />
                         </SelectTrigger>
                         <SelectContent>
@@ -454,12 +640,14 @@ export function AdminDashboard() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Font Weight</Label>
-                      <Select 
-                        value={currentText.fontWeight.toString()} 
+                      <Label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                        Font Weight
+                      </Label>
+                      <Select
+                        value={currentText.fontWeight.toString()}
                         onValueChange={(val) => patchActiveText({ fontWeight: Number(val) })}
                       >
-                        <SelectTrigger className="w-full bg-slate-50/50">
+                        <SelectTrigger className="w-full bg-slate-50/60">
                           <SelectValue placeholder="Select weight" />
                         </SelectTrigger>
                         <SelectContent>
@@ -473,147 +661,392 @@ export function AdminDashboard() {
                     </div>
 
                     <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Size</Label>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Size</Label>
                         <span className="text-xs font-medium text-primary">{currentText.fontSize}px</span>
                       </div>
                       <input
                         type="range"
                         min={12}
                         max={96}
-                        className="w-full accent-primary h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                        className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-slate-200 accent-primary"
                         value={currentText.fontSize}
                         onChange={(e) => patchActiveText({ fontSize: Number(e.target.value) })}
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Color Hex</Label>
+                      <Label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Color Hex</Label>
                       <div className="flex gap-2">
                         <input
                           type="color"
-                          className="h-10 w-10 p-1 bg-slate-50/50 border border-slate-200 rounded-md cursor-pointer"
+                          className="h-10 w-10 cursor-pointer rounded-md border border-slate-200 bg-slate-50/60 p-1"
                           value={currentText.color}
                           onChange={(e) => patchActiveText({ color: e.target.value })}
                         />
-                        <Input 
-                          value={currentText.color} 
-                          onChange={(e) => patchActiveText({ color: e.target.value })} 
-                          className="flex-1 font-mono text-sm bg-slate-50/50 uppercase" 
+                        <Input
+                          value={currentText.color}
+                          onChange={(e) => patchActiveText({ color: e.target.value })}
+                          className="flex-1 bg-slate-50/60 font-mono text-sm uppercase"
                         />
                       </div>
                     </div>
 
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                        Badge / Box Color
+                      </Label>
+                      <div className="flex gap-2">
+                        <input
+                          type="color"
+                          className="h-10 w-10 cursor-pointer rounded-md border border-slate-200 bg-slate-50/60 p-1"
+                          value={currentBackgroundColorInput}
+                          onChange={(e) => patchActiveText({ backgroundColor: e.target.value })}
+                        />
+                        <Input
+                          value={currentText.backgroundColor ?? "#334155"}
+                          onChange={(e) => patchActiveText({ backgroundColor: e.target.value })}
+                          className="flex-1 bg-slate-50/60 font-mono text-sm"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                        Show Background Box
+                      </Label>
+                      <Select
+                        value={(currentText.showBackground ?? true) ? "on" : "off"}
+                        onValueChange={(val) => patchActiveText({ showBackground: val === "on" })}
+                      >
+                        <SelectTrigger className="w-full bg-slate-50/60">
+                          <SelectValue placeholder="Background" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="on">On</SelectItem>
+                          <SelectItem value="off">Off</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                        Text Align
+                      </Label>
+                      <Select
+                        value={currentText.textAlign ?? "center"}
+                        onValueChange={(val: "left" | "center" | "right") =>
+                          patchActiveText({ textAlign: val })
+                        }
+                      >
+                        <SelectTrigger className="w-full bg-slate-50/60">
+                          <SelectValue placeholder="Alignment" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="left">Left</SelectItem>
+                          <SelectItem value="center">Center</SelectItem>
+                          <SelectItem value="right">Right</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-3 sm:col-span-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                          Roundness
+                        </Label>
+                        <span className="text-xs font-medium text-slate-500">
+                          {Math.round(currentText.borderRadius ?? 10)}px
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={48}
+                        className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-slate-200 accent-primary"
+                        value={Math.round(currentText.borderRadius ?? 10)}
+                        onChange={(e) => patchActiveText({ borderRadius: Number(e.target.value) })}
+                      />
+                    </div>
+
                     <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">X Position</Label>
-                        <span className="text-xs font-medium text-slate-500">{Math.round(currentText.x * 100)}%</span>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                          X Position
+                        </Label>
+                        <span className="text-xs font-medium text-slate-500">
+                          {Math.round(currentText.x * 100)}%
+                        </span>
                       </div>
                       <input
                         type="range"
                         min={0}
                         max={95}
-                        className="w-full accent-primary h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                        className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-slate-200 accent-primary"
                         value={Math.round(currentText.x * 100)}
                         onChange={(e) => patchActiveText({ x: Number(e.target.value) / 100 })}
                       />
                     </div>
 
                     <div className="space-y-3">
-                     <div className="flex justify-between">
-                        <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Y Position</Label>
-                        <span className="text-xs font-medium text-slate-500">{Math.round(currentText.y * 100)}%</span>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                          Y Position
+                        </Label>
+                        <span className="text-xs font-medium text-slate-500">
+                          {Math.round(currentText.y * 100)}%
+                        </span>
                       </div>
                       <input
                         type="range"
                         min={0}
                         max={95}
-                        className="w-full accent-primary h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                        className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-slate-200 accent-primary"
                         value={Math.round(currentText.y * 100)}
                         onChange={(e) => patchActiveText({ y: Number(e.target.value) / 100 })}
                       />
                     </div>
+
+                    {activeText === "family" && (
+                      <>
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                              Box Width
+                            </Label>
+                            <span className="text-xs font-medium text-slate-500">
+                              {Math.round(template.familyText.width * 100)}%
+                            </span>
+                          </div>
+                          <input
+                            type="range"
+                            min={8}
+                            max={90}
+                            className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-slate-200 accent-primary"
+                            value={Math.round(template.familyText.width * 100)}
+                            onChange={(e) =>
+                              setTemplate((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      familyText: {
+                                        ...prev.familyText,
+                                        width: Number(e.target.value) / 100,
+                                      },
+                                    }
+                                  : prev,
+                              )
+                            }
+                          />
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                              Box Height
+                            </Label>
+                            <span className="text-xs font-medium text-slate-500">
+                              {Math.round(template.familyText.height * 100)}%
+                            </span>
+                          </div>
+                          <input
+                            type="range"
+                            min={6}
+                            max={50}
+                            className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-slate-200 accent-primary"
+                            value={Math.round(template.familyText.height * 100)}
+                            onChange={(e) =>
+                              setTemplate((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      familyText: {
+                                        ...prev.familyText,
+                                        height: Number(e.target.value) / 100,
+                                      },
+                                    }
+                                  : prev,
+                              )
+                            }
+                          />
+                        </div>
+
+                      </>
+                    )}
                   </div>
+              </CardContent>
+            </Card>
+          )}
 
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-
-          <Card className="border-slate-200 shadow-sm bg-white overflow-hidden mt-4">
-             <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-4">
-              <CardTitle className="text-lg font-bold flex items-center gap-2">
-                <Link2 className="w-5 h-5 text-primary" /> Rapid Links
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm">
+            <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+                <Link2 className="h-5 w-5 text-primary" />
+                Rapid Links
               </CardTitle>
-              <CardDescription>Distribute these pre-made URLs to your users.</CardDescription>
+              <CardDescription>
+                Share pre-generated unit links with volunteers. Each link opens the framing flow with that unit locked.
+              </CardDescription>
             </CardHeader>
-            <CardContent className="p-0">
-               <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 border-b border-slate-100">
+            <CardContent className="p-4 sm:p-5">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {UNIT_LIST.map((unit) => {
                   const link = `${baseLink}?unit=${encodeURIComponent(unit)}`;
+                  const unitCount = leaderboard?.unitTotals.find((entry) => entry.unit === unit)?.count ?? 0;
+
                   return (
-                    <div className="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors" key={unit}>
-                      <span className="font-semibold text-slate-700 text-sm truncate pr-4">{unit}</span>
-                      <Button variant="ghost" size="sm" onClick={() => copyLink(link, unit)} className="shrink-0 text-slate-500 hover:text-primary hover:bg-primary/10">
-                        <Copy className="w-4 h-4" />
-                      </Button>
+                    <div key={unit} className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 sm:p-4">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <span className="truncate font-semibold text-slate-800">{unit}</span>
+                        <span className="rounded-md bg-white px-2 py-1 text-xs font-medium text-slate-500 ring-1 ring-slate-200">
+                          {unitCount} framed
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => copyLink(link, unit)}
+                          disabled={!baseLink}
+                          className="flex-1 gap-1.5"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                          Copy Link
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openLink(link)}
+                          disabled={!baseLink}
+                          className="gap-1.5 bg-white"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                          Open
+                        </Button>
+                      </div>
                     </div>
                   );
                 })}
               </div>
             </CardContent>
           </Card>
+
         </div>
 
-        {/* Right Column - Live Preview Renderer */}
-        <div className="lg:col-span-5 flex flex-col">
-          <div className="sticky top-24 w-full">
-            <Card className="border-slate-200 shadow-sm bg-white overflow-hidden flex flex-col h-full ring-1 ring-black/[0.03]">
-              <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-4 shrink-0 flex flex-row items-center justify-between">
+        <div className="order-1 xl:order-2">
+          <div className="space-y-4 xl:sticky xl:top-6">
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm ring-1 ring-black/[0.03]">
+              <CardHeader className="flex flex-col gap-4 border-b border-slate-100 bg-slate-50/50 pb-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <CardTitle className="text-md font-bold text-slate-800">Live Preview</CardTitle>
-                  <CardDescription className="text-xs mt-1">Interactive WYSIWYG editor</CardDescription>
+                  <CardTitle className="text-lg font-semibold text-slate-900">Live Preview</CardTitle>
+                  <CardDescription className="mt-1 text-xs">
+                    Drag the labels directly on canvas and preview how the final frame will look.
+                  </CardDescription>
                 </div>
-                
-                <div className="relative overflow-hidden group">
-                  <input type="file" accept="image/*" onChange={onSamplePhoto} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10" />
-                  <Button variant="outline" size="sm" className="bg-white pointer-events-none gap-2 text-xs">
-                    <ImageIcon className="w-4 h-4 text-slate-500 group-hover:text-primary transition-colors" /> {previewPhoto ? "Replace sample" : "Upload sample"}
-                  </Button>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="group relative overflow-hidden">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={onSamplePhoto}
+                      className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+                    />
+                    <Button variant="outline" size="sm" className="pointer-events-none gap-2 bg-white text-xs">
+                      <ImageIcon className="h-4 w-4 text-slate-500 group-hover:text-primary transition-colors" />
+                      {previewPhoto ? "Replace sample" : "Upload sample"}
+                    </Button>
+                  </div>
+
+                  {previewPhoto && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                      onClick={() => {
+                        setPreviewPhoto(null);
+                        setPhotoTransform(defaultPhotoTransform);
+                      }}
+                    >
+                      Clear
+                    </Button>
+                  )}
                 </div>
               </CardHeader>
 
-              <div className="bg-slate-100/50 flex-1 relative flex items-center justify-center p-4 min-h-[400px]">
-                <div 
-                  ref={previewWrapRef}
-                  className="w-full max-w-[400px] flex items-center justify-center relative shadow-lg shadow-black/10 rounded-xl overflow-hidden ring-1 ring-black/5 bg-white"
-                  style={{
-                    aspectRatio: template ? `${template.frameViewport.width} / ${template.frameViewport.height}` : '1/1'
-                  }}
-                >
-                  <FrameCanvas
-                    frameImage={selectedFrame?.image}
-                    photo={previewPhoto}
-                    width={previewWidth}
-                    height={previewHeight}
-                    unitLabel="Karassery"
-                    counterLabel="#128"
-                    unitText={template.unitText}
-                    counterText={template.counterText}
-                    photoTransform={photoTransform}
-                    onPhotoTransformChange={setPhotoTransform}
-                    editableText
-                    activeText={activeText}
-                    onActiveTextChange={setActiveText}
-                    onUnitTextChange={(next) => setTextLayout("unit", next)}
-                    onCounterTextChange={(next) => setTextLayout("counter", next)}
-                  />
+              <CardContent className="p-4 sm:p-5">
+                <p className="mb-4 text-xs text-slate-500">
+                  Family name input is now in the user-facing flow. Preview shows a sample value for layout testing.
+                </p>
+
+                <div className="mb-3 flex flex-wrap items-center gap-2 text-xs">
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2 py-0.5 font-medium text-primary">
+                    {activeText === "unit"
+                      ? "Editing unit text"
+                      : activeText === "counter"
+                        ? "Editing counter text"
+                        : "Editing family box"}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-100 px-2 py-0.5 font-medium text-slate-600">
+                    {selectedFrame ? selectedFrame.name : "No frame selected"}
+                  </span>
                 </div>
-              </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-[radial-gradient(circle_at_top,_#ffffff,_#f1f5f9)] p-3 sm:p-5">
+                  <div
+                    ref={previewWrapRef}
+                    className="relative mx-auto flex w-full max-w-[420px] items-center justify-center overflow-hidden rounded-xl bg-white shadow-lg shadow-black/10 ring-1 ring-black/5"
+                    style={{
+                      aspectRatio: template
+                        ? `${template.frameViewport.width} / ${template.frameViewport.height}`
+                        : "1/1",
+                    }}
+                  >
+                    <FrameCanvas
+                      frameImage={selectedFrame?.image}
+                      photo={previewPhoto}
+                      width={previewWidth}
+                      height={previewHeight}
+                      unitLabel="Karassery Unit"
+                      familyName="Sample Family Name for Preview"
+                      counterLabel="#128"
+                      unitText={template.unitText}
+                      counterText={template.counterText}
+                      familyText={template.familyText}
+                      photoTransform={photoTransform}
+                      onPhotoTransformChange={setPhotoTransform}
+                      editableText
+                      activeText={activeText}
+                      onActiveTextChange={setActiveText}
+                      onUnitTextChange={(next) => setTextLayout("unit", next)}
+                      onCounterTextChange={(next) => setTextLayout("counter", next)}
+                      onFamilyTextChange={(next) =>
+                        setTemplate((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                familyText: next,
+                              }
+                            : prev,
+                        )
+                      }
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-200 bg-slate-50 shadow-none">
+              <CardContent className="p-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-600">Tip</p>
+                <p className="mt-1 text-xs leading-relaxed text-slate-600">
+                  On touch devices, drag text with one finger and pinch to resize. Use the sliders for precise
+                  positioning before saving.
+                </p>
+              </CardContent>
             </Card>
           </div>
         </div>
-
       </div>
     </div>
   );

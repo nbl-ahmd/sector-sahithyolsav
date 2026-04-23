@@ -8,6 +8,7 @@ import { TemplateConfig } from "@/lib/types";
 import { FrameCanvas } from "@/components/FrameCanvas";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Upload, Share2, Image as ImageIcon, MapPin, Eye } from "lucide-react";
 import { toast } from "sonner";
 
@@ -26,6 +27,7 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
   const effectiveTemplateId = templateId || FAMILY_FRAME_TEMPLATE_ID;
   const [template, setTemplate] = useState<TemplateConfig | null>(null);
   const [photo, setPhoto] = useState<string | null>(null);
+  const [familyName, setFamilyName] = useState("");
   const [nextCounter, setNextCounter] = useState(1);
   const [latestCounter, setLatestCounter] = useState<number | null>(null);
   const [working, setWorking] = useState(false);
@@ -111,6 +113,7 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
   }, [previewWidth, template]);
 
   const displayCounter = latestCounter ?? nextCounter;
+  const trimmedFamilyName = familyName.trim();
 
   const onPhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -147,6 +150,7 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
           templateId: template.id,
           unit: lockedUnit,
           frameId: selectedFrame.id,
+          familyName: trimmedFamilyName || undefined,
         }),
       });
 
@@ -275,6 +279,16 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
               </div>
             </div>
 
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Family Name (Optional)</p>
+              <Input
+                value={familyName}
+                onChange={(event) => setFamilyName(event.target.value.slice(0, 120))}
+                placeholder="e.g. Hidaya Family"
+                className="h-11 bg-white"
+              />
+            </div>
+
             <Button
               size="lg"
               className="w-full h-14 text-base font-semibold shadow-md transition-all gap-2"
@@ -325,10 +339,12 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
                   photo={photo}
                   width={previewWidth}
                   height={previewHeight}
-                  unitLabel={lockedUnit}
+                  unitLabel={`${lockedUnit} Unit`}
+                  familyName={trimmedFamilyName}
                   counterLabel={`#${displayCounter}`}
                   unitText={template.unitText}
                   counterText={template.counterText}
+                  familyText={template.familyText}
                   photoTransform={staticPhotoTransform}
                 />
               </div>
@@ -353,10 +369,12 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
             photo={photo}
             width={template.frameViewport.width}
             height={template.frameViewport.height}
-            unitLabel={lockedUnit}
+            unitLabel={`${lockedUnit} Unit`}
+            familyName={trimmedFamilyName}
             counterLabel={`#${displayCounter}`}
             unitText={template.unitText}
             counterText={template.counterText}
+            familyText={template.familyText}
             photoTransform={staticPhotoTransform}
           />
         </div>

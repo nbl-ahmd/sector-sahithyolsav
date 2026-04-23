@@ -7,7 +7,7 @@ import { LeaderboardSnapshot } from "@/lib/types";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Trophy, Share2, Copy, RefreshCcw, Image as ImageIcon, MapPin, Users, Activity } from "lucide-react";
+import { Trophy, Share2, Crown, Copy, RefreshCcw, Image as ImageIcon, MapPin, Users, Activity } from "lucide-react";
 import { toast } from "sonner";
 
 export function SectorDashboard() {
@@ -134,93 +134,95 @@ export function SectorDashboard() {
   const maxCount = Math.max(...data.unitTotals.map(u => u.count), 1);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-10 mb-12">
       {/* Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-none shadow-sm bg-primary text-primary-foreground overflow-hidden relative">
-           <div className="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-bl-full -mr-8 -mt-8 pointer-events-none" />
-           <CardContent className="p-6 relative z-10 flex flex-col justify-between h-full">
-             <div className="flex items-center justify-between mb-4">
-                <p className="text-primary-foreground/80 font-medium text-sm w-full uppercase tracking-wider">Sector Total</p>
-                <MapPin className="w-5 h-5 text-primary-foreground/50" />
-             </div>
-             <div>
-                <div className="text-5xl font-black tracking-tight">{data.total}</div>
-                <p className="mt-2 text-sm text-primary-foreground/90">Total unique frames generated</p>
-             </div>
-           </CardContent>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <Card className="border border-primary/10 shadow-lg bg-gradient-to-br from-primary to-blue-700 text-primary-foreground overflow-hidden relative group rounded-2xl hover:shadow-xl transition-all duration-300">
+          <div className="absolute right-0 top-0 w-32 sm:w-48 h-32 sm:h-48 bg-white/10 rounded-bl-full -mr-8 sm:-mr-12 -mt-8 sm:-mt-12 pointer-events-none group-hover:scale-110 transition-transform duration-500" />
+          <CardContent className="p-6 sm:p-8 relative z-10 flex flex-col justify-between h-full min-h-[160px]">
+            <div className="flex items-center justify-between mb-4">
+               <p className="text-primary-foreground/80 font-bold text-xs sm:text-sm w-full uppercase tracking-widest drop-shadow-sm">Sector Total</p>
+               <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground/50 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+            </div>
+            <div>
+               <div className="text-5xl sm:text-6xl font-black tracking-tighter drop-shadow-md">{data.total}</div>
+               <p className="mt-3 text-sm font-medium text-primary-foreground/90">Total unique frames generated</p>
+            </div>
+          </CardContent>
         </Card>
 
-        <Card className="border-slate-200 shadow-sm bg-white">
-           <CardContent className="p-6 flex flex-col justify-between h-full">
-             <div className="flex items-center justify-between mb-4">
-                <p className="text-slate-500 font-medium text-sm uppercase tracking-wider">Units Reporting</p>
-                <Users className="w-5 h-5 text-slate-400" />
-             </div>
-             <div>
-                <div className="text-4xl font-bold text-slate-900">{activeUnits} <span className="text-2xl text-slate-400 font-medium">/ {data.unitTotals.length}</span></div>
-                <p className="mt-2 text-sm text-slate-500">Active participating units</p>
-             </div>
-           </CardContent>
+        <Card className="border border-slate-200 shadow-md bg-white hover:shadow-lg transition-all duration-300 rounded-2xl group">
+          <CardContent className="p-6 sm:p-8 flex flex-col justify-between h-full min-h-[160px] relative overflow-hidden">
+            <div className="absolute right-0 top-0 w-32 h-32 bg-slate-50 rounded-bl-full -mr-8 -mt-8 pointer-events-none group-hover:scale-110 transition-transform duration-500" />
+            <div className="flex items-center justify-between mb-4 relative z-10">
+               <p className="text-slate-500 font-bold text-xs sm:text-sm uppercase tracking-widest">Units Reporting</p>
+               <Users className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400 group-hover:text-blue-500 transition-colors" />
+            </div>
+            <div className="relative z-10">
+               <div className="text-5xl sm:text-6xl font-black tracking-tighter text-slate-900">{activeUnits} <span className="text-2xl sm:text-3xl text-slate-400 font-bold opacity-50 block sm:inline">/ {data.unitTotals.length}</span></div>
+               <p className="mt-3 text-sm font-medium text-slate-500">Active participating units</p>
+            </div>
+          </CardContent>
         </Card>
 
-        <Card className="border-slate-200 shadow-sm bg-white">
-           <CardContent className="p-6 flex flex-col justify-between h-full">
-             <div className="flex items-center justify-between mb-4">
-                <p className="text-slate-500 font-medium text-sm uppercase tracking-wider">Current Leader</p>
-                <Trophy className="w-5 h-5 text-amber-500" />
-             </div>
-             <div>
-                <div className="text-2xl font-bold text-slate-900 truncate" title={leading?.unit ?? "N/A"}>
-                    {leading ? leading.unit : "N/A"}
-                </div>
-                {leading && <p className="mt-2 text-sm text-slate-500 font-medium">{leading.count} frames contributed</p>}
-             </div>
-           </CardContent>
+        <Card className="border border-slate-200 shadow-md bg-white hover:shadow-lg transition-all duration-300 rounded-2xl group sm:col-span-2 lg:col-span-1">
+          <CardContent className="p-6 sm:p-8 flex flex-col justify-between h-full min-h-[160px] relative overflow-hidden">
+            <div className="absolute right-0 top-0 w-32 h-32 bg-amber-50/50 rounded-bl-full -mr-8 -mt-8 pointer-events-none group-hover:scale-110 transition-transform duration-500" />
+            <div className="flex items-center justify-between mb-4 relative z-10">
+               <p className="text-slate-500 font-bold text-xs sm:text-sm uppercase tracking-widest flex items-center gap-2">Current Leader <Crown className="w-4 h-4 text-amber-500" /></p>
+               <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500 fill-amber-500/20 group-hover:scale-110 transition-transform" />
+            </div>
+            <div className="relative z-10">
+               <div className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 truncate" title={leading?.unit ?? "N/A"}>
+                 {leading ? leading.unit : "N/A"}
+               </div>
+               {leading && <p className="mt-3 text-sm text-slate-600 font-semibold flex items-center gap-2"><span className="px-2.5 py-0.5 bg-amber-100 text-amber-800 rounded-full font-bold">{leading.count}</span> frames contributed</p>}
+            </div>
+          </CardContent>
         </Card>
       </div>
 
       {/* Leaderboard & Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-3">
-          <Card className="border-slate-200 shadow-sm bg-white overflow-hidden h-full" ref={shareRef}>
-            <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-6">
+      <div className="flex flex-col lg:flex-row gap-6 sm:gap-8">
+        <div className="flex-1 w-full order-2 lg:order-1">
+          <Card className="border border-slate-200 shadow-lg bg-white overflow-hidden rounded-2xl" ref={shareRef}>
+            <CardHeader className="border-b border-slate-100 bg-slate-50/50 p-6 sm:p-8">
               <div className="flex sm:flex-row flex-col sm:items-center justify-between gap-4">
                 <div>
-                  <CardTitle className="text-xl flex items-center gap-2 font-bold mb-1">
-                    <Activity className="w-5 h-5 text-primary" />
+                  <CardTitle className="text-xl sm:text-2xl flex items-center gap-3 font-extrabold mb-2 text-slate-900 tracking-tight">
+                    <Activity className="w-6 h-6 text-primary p-1 bg-primary/10 rounded-md" />
                     Live Standings
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-sm sm:text-base font-medium">
                     Real-time ranking of area units by participation.
                   </CardDescription>
                 </div>
               </div>
             </CardHeader>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <table className="w-full text-left text-sm whitespace-nowrap min-w-[600px]">
+                <thead className="bg-slate-100/80 border-b border-slate-200 text-[10px] sm:text-xs font-black text-slate-500 uppercase tracking-widest sticky top-0">
                   <tr>
-                    <th className="px-6 py-4 w-16 text-center">Rank</th>
-                    <th className="px-6 py-4">Unit Name</th>
-                    <th className="px-6 py-4 w-24 text-right">Frames</th>
-                    <th className="px-6 py-4 w-1/3 min-w-[150px]">Activity Progress</th>
+                    <th className="px-4 sm:px-6 py-4 sm:py-5 w-16 sm:w-20 text-center">Rank</th>
+                    <th className="px-4 sm:px-6 py-4 sm:py-5">Unit Name</th>
+                    <th className="px-4 sm:px-6 py-4 sm:py-5 w-24 text-right">Frames</th>
+                    <th className="px-4 sm:px-6 py-4 sm:py-5 w-1/4 sm:w-1/3 min-w-[150px]">Activity Progress</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
                   {data.unitTotals.map((entry, index) => {
                     const progress = (entry.count / maxCount) * 100;
                     return (
-                      <tr key={entry.unit} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-6 py-4 text-center">
-                          <div className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${index === 0 ? 'bg-amber-100 text-amber-700' : index === 1 ? 'bg-slate-200 text-slate-700' : index === 2 ? 'bg-amber-900/10 text-amber-900' : 'bg-slate-100 text-slate-500 font-medium'}`}>
+                      <tr key={entry.unit} className="hover:bg-slate-50/80 transition-all duration-200 group">
+                        <td className="px-4 sm:px-6 py-4 sm:py-5 text-center">
+                          <div className={`inline-flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full font-black text-sm shadow-sm ring-4 ring-white group-hover:scale-110 transition-transform ${index === 0 ? 'bg-gradient-to-br from-amber-200 to-yellow-400 text-amber-900 shadow-amber-200/50' : index === 1 ? 'bg-gradient-to-br from-slate-200 to-gray-300 text-slate-800 shadow-slate-300/50' : index === 2 ? 'bg-gradient-to-br from-orange-200 to-red-300 text-red-900 shadow-orange-300/50' : 'bg-slate-100/80 text-slate-500'}`}>
                             {index + 1}
                           </div>
                         </td>
-                        <td className="px-6 py-4 font-semibold text-slate-900">{entry.unit}</td>
-                        <td className="px-6 py-4 font-bold text-primary text-right">{entry.count}</td>
-                        <td className="px-6 py-4">
-                          <Progress value={progress || 0} className="h-2 w-full bg-slate-100" />
+                        <td className="px-4 sm:px-6 py-4 sm:py-5 font-bold text-slate-900 text-base group-hover:text-primary transition-colors">{entry.unit}</td>
+                        <td className="px-4 sm:px-6 py-4 sm:py-5 font-black text-primary text-xl text-right tabular-nums tracking-tight">{entry.count}</td>
+                        <td className="px-4 sm:px-6 py-4 sm:py-5">
+                          <Progress value={progress || 0} className="h-2.5 sm:h-3 w-full bg-slate-100 shadow-inner overflow-hidden" indicatorClassName={`${index === 0 ? 'bg-amber-500' : index === 1 ? 'bg-slate-400' : index === 2 ? 'bg-orange-500' : 'bg-primary'}`} />
                         </td>
                       </tr>
                     );
@@ -232,45 +234,46 @@ export function SectorDashboard() {
         </div>
 
         {/* Sidebar Actions */}
-        <div className="flex flex-col gap-4">
-          <Card className="border-slate-200 shadow-sm bg-white">
-            <CardHeader className="pb-4 border-b border-slate-100">
-               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                 <Share2 className="w-4 h-4 text-slate-500" />
-                 Share & Export
-               </CardTitle>
+        <div className="w-full lg:w-80 flex flex-col gap-4 sm:gap-6 order-1 lg:order-2 shrink-0">
+          <Card className="border border-slate-200 shadow-lg bg-white rounded-2xl sticky top-24">
+            <CardHeader className="pb-4 sm:pb-5 border-b border-slate-100 p-5 sm:p-6">
+              <CardTitle className="text-sm sm:text-base font-bold uppercase tracking-wider flex items-center gap-2 text-slate-700">
+                <Share2 className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400" />
+                Share & Export
+              </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 space-y-3">
-               <Button
-                 variant="default"
-                 className="w-full justify-start gap-2"
-                 onClick={shareImage}
-                 disabled={sharing !== null}
-               >
-                 <ImageIcon className="w-4 h-4" />
-                 {sharing === "image" ? "Generating..." : "Share as Image"}
-               </Button>
-               <Button
-                 variant="outline"
-                 className="w-full justify-start gap-2"
-                 onClick={shareText}
-                 disabled={sharing !== null}
-               >
-                 <Copy className="w-4 h-4" />
-                 {sharing === "text" ? "Processing..." : "Copy as Text"}
-               </Button>
+            <CardContent className="p-5 sm:p-6 space-y-3 sm:space-y-4">
+              <Button
+                variant="default"
+                className="w-full justify-start gap-3 h-12 sm:h-14 text-sm sm:text-base font-bold shadow-md hover:shadow-lg transition-all rounded-xl hover:-translate-y-0.5"
+                onClick={shareImage}
+                disabled={sharing !== null}
+              >
+                <ImageIcon className="w-5 h-5 flex-shrink-0" />
+                {sharing === "image" ? "Generating Image..." : "Share as Image"}
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full justify-start gap-3 h-12 sm:h-14 text-sm sm:text-base font-bold border-2 hover:bg-slate-50 transition-all rounded-xl group"
+                onClick={shareText}
+                disabled={sharing !== null}
+              >
+                <Copy className="w-5 h-5 flex-shrink-0 text-slate-500 group-hover:text-slate-900 transition-colors" />
+                {sharing === "text" ? "Processing..." : "Copy as Text"}
+              </Button>
+
+              <div className="pt-4 sm:pt-6 pb-2 border-t border-slate-100 w-full mt-2"></div>
+              <Button
+                variant="secondary"
+                className="w-full gap-3 h-12 bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 font-bold transition-all rounded-xl"
+                onClick={refresh}
+                disabled={isLoading || sharing !== null}
+              >
+                <RefreshCcw className={`w-4 h-4 flex-shrink-0 text-slate-500 ${isLoading ? 'animate-spin text-primary' : ''}`} />
+                Refresh Data
+              </Button>
             </CardContent>
           </Card>
-
-          <Button
-            variant="secondary"
-            className="w-full gap-2 bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900"
-            onClick={refresh}
-            disabled={isLoading || sharing !== null}
-          >
-            <RefreshCcw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh Data
-          </Button>
         </div>
       </div>
     </div>
