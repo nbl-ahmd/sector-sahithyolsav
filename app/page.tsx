@@ -10,6 +10,8 @@ import { HomeCountdown } from "@/components/HomeCountdown";
 import { getAppSettings, getLeaderboard, getTodayLeadingUnit } from "@/lib/store";
 import { HeroSection } from "@/components/HeroSection";
 
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const familyFrameLink = getFamilyFrameRoute();
   const [leaderboardData, appSettings, todayLeadingUnit] = await Promise.all([getLeaderboard(), getAppSettings(), getTodayLeadingUnit()]);
@@ -133,34 +135,37 @@ export default async function HomePage() {
       </div>
 
       <Card className="border border-slate-200 shadow-md sm:shadow-lg rounded-2xl bg-white overflow-hidden mb-12">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-700 whitespace-nowrap min-w-[500px]">
+        <div className="overflow-x-hidden">
+          <table className="w-full text-left text-xs sm:text-sm text-slate-700 table-fixed">
             <thead className="bg-slate-100/80 border-b border-slate-200 text-[10px] sm:text-xs uppercase font-bold text-slate-500 tracking-widest sticky top-0">
               <tr>
-                <th className="px-4 sm:px-6 py-4 sm:py-5">Unit Name</th>
-                <th className="px-4 sm:px-6 py-4 sm:py-5">Status</th>
-                <th className="px-4 sm:px-6 py-4 sm:py-5 text-right">Quick Link</th>
+                <th className="px-3 sm:px-6 py-3 sm:py-5 w-[46%]">Unit Name</th>
+                <th className="px-2 sm:px-6 py-3 sm:py-5 w-[16%] text-center">Status</th>
+                <th className="px-2 sm:px-6 py-3 sm:py-5 w-[38%] text-right">Quick Link</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
               {UNIT_LIST.map((unit) => (
                 <tr key={unit} className="hover:bg-slate-50/80 transition-all duration-200 group">
-                  <td className="px-4 sm:px-6 py-4 sm:py-5 font-bold text-slate-900 flex items-center gap-3 sm:gap-4 text-sm sm:text-base">
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-indigo-50 flex items-center justify-center text-xs sm:text-sm font-extrabold text-indigo-600 ring-4 ring-white shadow-sm group-hover:scale-105 transition-transform">
+                  <td className="px-3 sm:px-6 py-3 sm:py-5 font-bold text-slate-900 text-sm sm:text-base">
+                    <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
+                    <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-full bg-indigo-50 flex shrink-0 items-center justify-center text-[11px] sm:text-sm font-extrabold text-indigo-600 ring-2 sm:ring-4 ring-white shadow-sm group-hover:scale-105 transition-transform">
                       {unit.substring(0, 2).toUpperCase()}
                     </div>
-                    {unit}
+                    <span className="truncate leading-tight">{unit}</span>
+                    </div>
                   </td>
-                  <td className="px-4 sm:px-6 py-4 sm:py-5">
-                    <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold border border-indigo-200/60 shadow-sm px-2.5 py-1">
+                  <td className="px-2 sm:px-6 py-3 sm:py-5 text-center">
+                    <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold border border-indigo-200/60 shadow-sm px-2 py-0.5 text-xs">
                       {unitCountMap.get(unit) ?? 0}
                     </Badge>
                   </td>
-                  <td className="px-4 sm:px-6 py-4 sm:py-5 text-right">
-                    <Button variant="ghost" size="sm" asChild className="text-primary font-semibold hover:text-primary hover:bg-primary/5 rounded-full transition-all px-4 group-hover:shadow-sm ring-1 ring-transparent hover:ring-primary/20">
+                  <td className="px-2 sm:px-6 py-3 sm:py-5 text-right">
+                    <Button variant="ghost" size="sm" asChild className="text-primary font-semibold hover:text-primary hover:bg-primary/5 rounded-full transition-all px-2 sm:px-4 group-hover:shadow-sm ring-1 ring-transparent hover:ring-primary/20 text-xs sm:text-sm">
                       <Link href={`${familyFrameLink}?unit=${encodeURIComponent(unit)}`}>
-                        Frame Image
-                        <ArrowRight className="h-4 w-4 ml-1.5 transition-transform group-hover:translate-x-1" />
+                        <span className="hidden sm:inline">Frame Image</span>
+                        <span className="sm:hidden">Frame</span>
+                        <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 ml-1 transition-transform group-hover:translate-x-1" />
                       </Link>
                     </Button>
                   </td>

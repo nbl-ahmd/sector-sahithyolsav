@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Users, Link as LinkIcon, Trophy } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
+export const dynamic = "force-dynamic";
+
 export default async function FamilySectionPage() {
   const leaderboard = await getLeaderboard();
   const maxCount = Math.max(...leaderboard.unitTotals.map(u => u.count), 1);

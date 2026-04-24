@@ -1,7 +1,14 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
+import {
+  motion,
+  AnimatePresence,
+  useReducedMotion,
+  useScroll,
+  useSpring,
+  useTransform,
+} from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Calendar, MapPin, Maximize2, X } from "lucide-react";
 
@@ -30,10 +37,35 @@ function getRemaining(targetDate: string | null) {
 }
 
 export function HeroSection({ targetDate }: HeroSectionProps) {
+  const sectionRef = useRef<HTMLElement>(null);
   const [active, setActive] = useState(0);
   const [timeLeft, setTimeLeft] = useState(() => getRemaining(targetDate));
   const [isHovered, setIsHovered] = useState(false);
   const [showPoster, setShowPoster] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start start", "end end"],
+  });
+  const mobilePosterRevealRaw = useTransform(scrollYProgress, [0.06, 0.78], [0, 1]);
+  const mobilePosterReveal = useSpring(mobilePosterRevealRaw, {
+    stiffness: 110,
+    damping: 24,
+    mass: 0.5,
+  });
+  const mobileTextOpacity = useTransform(mobilePosterReveal, [0, 0.72], [1, 0]);
+  const mobileTextY = useTransform(mobilePosterReveal, [0, 1], [0, -28]);
+  const mobilePosterClipPath = useTransform(
+    mobilePosterReveal,
+    (value) => `inset(${(1 - value) * 100}% 0% 0% 0%)`,
+  );
+  const mobilePosterScale = useTransform(mobilePosterReveal, [0, 1], [1.1, 1]);
+  const mobilePosterOverlayOpacity = useTransform(mobilePosterReveal, [0, 1], [0.2, 0]);
+  const mobileFeatherTop = useTransform(
+    mobilePosterReveal,
+    (value) => `calc(${(1 - value) * 100}% - 88px)`,
+  );
+  const mobileFeatherOpacity = useTransform(mobilePosterReveal, [0, 0.12, 0.95, 1], [0, 0.92, 0.92, 0]);
 
   useEffect(() => {
     // Keep timer updating every second
@@ -54,7 +86,11 @@ export function HeroSection({ targetDate }: HeroSectionProps) {
   }, [isHovered]);
 
   return (
-    <section className="relative w-full h-auto lg:h-[85vh] min-h-[90dvh] lg:min-h-[650px] mb-12 sm:mb-16 rounded-xl lg:rounded-3xl overflow-hidden bg-slate-950 flex flex-col lg:flex-row-reverse items-center justify-center p-6 sm:p-8 md:p-12 gap-8 md:gap-12 py-10 lg:py-12 shadow-2xl">
+    <section
+      ref={sectionRef}
+      className="relative w-full h-[220dvh] sm:h-[205dvh] lg:h-[85vh] min-h-0 lg:min-h-[650px] mb-12 sm:mb-16 rounded-xl lg:rounded-3xl bg-slate-950 shadow-2xl"
+    >
+      <div className="sticky top-0 relative h-[100dvh] lg:h-full overflow-hidden flex flex-col lg:flex-row-reverse items-center justify-center p-6 sm:p-8 md:p-12 gap-8 md:gap-12 py-10 lg:py-12 rounded-xl lg:rounded-3xl">
       {/* Background ambient effect */}
       <div className="absolute inset-0 bg-gradient-to-br from-amber-900/20 via-slate-950 to-emerald-900/20 z-0 pointer-events-none hidden lg:block" />
       <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-amber-500/10 blur-[120px] rounded-full z-0 pointer-events-none hidden lg:block" />
@@ -161,8 +197,54 @@ export function HeroSection({ targetDate }: HeroSectionProps) {
         </div>
       </div>
 
+      {/* Mobile poster reveal on scroll */}
+      <motion.div
+        className="absolute inset-0 z-30 lg:hidden pointer-events-none"
+        style={prefersReducedMotion ? undefined : { clipPath: mobilePosterClipPath }}
+      >
+        <motion.div
+          className="absolute inset-0"
+          style={prefersReducedMotion ? undefined : { scale: mobilePosterScale }}
+        >
+          <Image
+            src="/main-poster.jpg"
+            alt="Official Poster"
+            fill
+            sizes="100vw"
+            className="object-cover object-top"
+            priority
+          />
+          <motion.div
+            className="absolute inset-0 bg-slate-950/40"
+            style={prefersReducedMotion ? { opacity: 0 } : { opacity: mobilePosterOverlayOpacity }}
+          />
+        </motion.div>
+      </motion.div>
+      {!prefersReducedMotion && (
+        <motion.div
+          className="absolute left-0 right-0 h-40 z-40 lg:hidden pointer-events-none"
+          style={{
+            top: mobileFeatherTop,
+            opacity: mobileFeatherOpacity,
+            background:
+              "linear-gradient(to bottom, rgba(15,23,42,0.0) 0%, rgba(15,23,42,0.6) 50%, rgba(15,23,42,0.0) 100%)",
+            filter: "blur(12px)",
+          }}
+        />
+      )}
+
       {/* Text Content */}
-      <div className="relative z-20 flex-1 text-center lg:text-left w-full mt-4 md:mt-0 py-8 lg:py-0">
+      <motion.div
+        className="relative z-20 flex-1 text-center lg:text-left w-full mt-4 md:mt-0 py-8 lg:py-0"
+        style={
+          prefersReducedMotion
+            ? undefined
+            : {
+                opacity: mobileTextOpacity,
+                y: mobileTextY,
+              }
+        }
+      >
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -177,7 +259,9 @@ export function HeroSection({ targetDate }: HeroSectionProps) {
           </div>
 
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-tight mb-4 leading-tight">
-            Sector <br className="hidden md:block" />
+            <span className="block text-lg md:text-xl lg:text-2xl font-semibold tracking-normal text-slate-200">
+              Karassery Sector
+            </span>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-orange-500">
               Sahityolsav
             </span>
@@ -202,7 +286,7 @@ export function HeroSection({ targetDate }: HeroSectionProps) {
             <motion.div 
               onClick={() => setShowPoster(true)}
               whileHover={{ scale: 1.03, y: -5 }}
-              className="relative w-[150px] sm:w-[200px] xl:w-[260px] aspect-[1/1.414] rounded-2xl overflow-hidden border border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.5)] group cursor-pointer bg-slate-900 shrink-0 z-20 mx-auto lg:mx-0 transition-all duration-300"
+              className="relative hidden lg:block w-[150px] sm:w-[200px] xl:w-[260px] aspect-[1/1.414] rounded-2xl overflow-hidden border border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.5)] group cursor-pointer bg-slate-900 shrink-0 z-20 mx-auto lg:mx-0 transition-all duration-300"
             >
                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/20 to-emerald-500/10 mix-blend-overlay z-10 opacity-100 group-hover:opacity-0 transition-opacity duration-500" />
                <Image 
@@ -251,6 +335,7 @@ export function HeroSection({ targetDate }: HeroSectionProps) {
 
           </div>
         </motion.div>
+      </motion.div>
       </div>
 
       {/* Modal for Full Poster */}

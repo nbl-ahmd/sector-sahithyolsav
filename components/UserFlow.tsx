@@ -37,6 +37,7 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
   const previewWrapRef = useRef<HTMLDivElement>(null);
   const exportRef = useRef<HTMLDivElement>(null);
   const [previewWidth, setPreviewWidth] = useState(360);
+  const [frameSize, setFrameSize] = useState<{ width: number; height: number } | null>(null);
 
   const lockedUnit = resolveUnit(preselectedUnit);
 
@@ -103,14 +104,54 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
 
   const selectedFrame = useMemo(() => template?.frames[0], [template]);
 
+  useEffect(() => {
+    if (!selectedFrame?.image) {
+      setFrameSize(null);
+      return;
+    }
+
+    let cancelled = false;
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = selectedFrame.image;
+    img.onload = () => {
+      if (cancelled) {
+        return;
+      }
+      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+        setFrameSize({ width: img.naturalWidth, height: img.naturalHeight });
+      } else {
+        setFrameSize(null);
+      }
+    };
+    img.onerror = () => {
+      if (!cancelled) {
+        setFrameSize(null);
+      }
+    };
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedFrame?.image]);
+
+  const exportViewport = useMemo(
+    () =>
+      frameSize ?? {
+        width: template?.frameViewport.width ?? 1080,
+        height: template?.frameViewport.height ?? 1350,
+      },
+    [frameSize, template?.frameViewport.height, template?.frameViewport.width],
+  );
+
   const previewHeight = useMemo(() => {
-    if (!template) {
+    if (!exportViewport.width || !exportViewport.height) {
       return Math.round(previewWidth * 1.2);
     }
 
-    const ratio = template.frameViewport.height / template.frameViewport.width;
+    const ratio = exportViewport.height / exportViewport.width;
     return Math.round(previewWidth * ratio);
-  }, [previewWidth, template]);
+  }, [previewWidth, exportViewport.height, exportViewport.width]);
 
   const displayCounter = latestCounter ?? nextCounter;
   const trimmedFamilyName = familyName.trim();
@@ -174,8 +215,8 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
         useCORS: true,
         backgroundColor: null,
         scale: 1,
-        width: template.frameViewport.width,
-        height: template.frameViewport.height,
+        width: exportViewport.width,
+        height: exportViewport.height,
       });
 
       const blob = await new Promise<Blob | null>((resolve) => {
@@ -358,8 +399,8 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
           position: "fixed",
           left: -10000,
           top: -10000,
-          width: template.frameViewport.width,
-          height: template.frameViewport.height,
+          width: exportViewport.width,
+          height: exportViewport.height,
           pointerEvents: "none",
         }}
       >
@@ -367,8 +408,8 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
           <FrameCanvas
             frameImage={selectedFrame.image}
             photo={photo}
-            width={template.frameViewport.width}
-            height={template.frameViewport.height}
+            width={exportViewport.width}
+            height={exportViewport.height}
             unitLabel={`${lockedUnit} Unit`}
             familyName={trimmedFamilyName}
             counterLabel={`#${displayCounter}`}
