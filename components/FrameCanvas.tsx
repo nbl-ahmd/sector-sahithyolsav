@@ -408,8 +408,8 @@ export function FrameCanvas({
     const textAlign = layout.textAlign ?? "center";
     const style: CSSProperties = {
       position: "absolute",
-      left: Math.round(layout.x * width),
-      top: Math.round(layout.y * height),
+      left: `${layout.x * 100}%`,
+      top: `${layout.y * 100}%`,
       color: layout.color,
       fontSize: layout.fontSize,
       fontFamily: layout.fontFamily,

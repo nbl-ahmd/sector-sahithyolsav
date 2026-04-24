@@ -40,7 +40,6 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
   const previewWrapRef = useRef<HTMLDivElement>(null);
   const exportRef = useRef<HTMLDivElement>(null);
   const [previewWidth, setPreviewWidth] = useState(360);
-  const [frameSize, setFrameSize] = useState<{ width: number; height: number } | null>(null);
 
   const lockedUnit = resolveUnit(preselectedUnit);
 
@@ -116,44 +115,12 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
 
   const selectedFrame = useMemo(() => template?.frames[0], [template]);
 
-  useEffect(() => {
-    if (!selectedFrame?.image) {
-      setFrameSize(null);
-      return;
-    }
-
-    let cancelled = false;
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.src = selectedFrame.image;
-    img.onload = () => {
-      if (cancelled) {
-        return;
-      }
-      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-        setFrameSize({ width: img.naturalWidth, height: img.naturalHeight });
-      } else {
-        setFrameSize(null);
-      }
-    };
-    img.onerror = () => {
-      if (!cancelled) {
-        setFrameSize(null);
-      }
-    };
-
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedFrame?.image]);
-
   const exportViewport = useMemo(
-    () =>
-      frameSize ?? {
-        width: template?.frameViewport.width ?? 1080,
-        height: template?.frameViewport.height ?? 1350,
-      },
-    [frameSize, template?.frameViewport.height, template?.frameViewport.width],
+    () => ({
+      width: template?.frameViewport.width ?? 1080,
+      height: template?.frameViewport.height ?? 1350,
+    }),
+    [template?.frameViewport.height, template?.frameViewport.width],
   );
 
   const previewHeight = useMemo(() => {
