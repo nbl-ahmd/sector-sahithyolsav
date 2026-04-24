@@ -33,6 +33,7 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [photoTransform, setPhotoTransform] = useState(staticPhotoTransform);
 
   const previewWrapRef = useRef<HTMLDivElement>(null);
   const exportRef = useRef<HTMLDivElement>(null);
@@ -66,6 +67,7 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
         setTemplate(data.template);
         setNextCounter(data.nextCounter || 1);
         setLatestCounter(null);
+        setPhotoTransform(staticPhotoTransform);
       } catch {
         if (!cancelled) {
           setError("Could not load the Family Sahityolsav frame template.");
@@ -165,6 +167,7 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
     try {
       const dataUrl = await fileToDataUrl(file);
       setPhoto(dataUrl);
+      setPhotoTransform(staticPhotoTransform);
       setError("");
       toast.success("Photo uploaded successfully.");
     } catch {
@@ -231,12 +234,14 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
       const file = new File([blob], filename, {
         type: "image/png",
       });
+      const normalizedFamilyName = trimmedFamilyName || "Family";
+      const shareCaption = `${normalizedFamilyName}\n${lockedUnit} unit family sahityolsav\n#${reservedCounter}`;
 
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
           title: "Sector Sahityolsav - Family Frame",
-          text: `${lockedUnit} • Family Sahityolsav Frame #${reservedCounter}`,
+          text: shareCaption,
         });
       } else {
         downloadBlob(blob, filename);
@@ -330,6 +335,23 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
               />
             </div>
 
+            {photo && (
+              <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                <p className="text-xs font-medium text-slate-600">
+                  Drag photo to move. Pinch to resize on mobile.
+                </p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={() => setPhotoTransform(staticPhotoTransform)}
+                >
+                  Reset
+                </Button>
+              </div>
+            )}
+
             <Button
               size="lg"
               className="w-full h-14 text-base font-semibold shadow-md transition-all gap-2"
@@ -386,7 +408,8 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
                   unitText={template.unitText}
                   counterText={template.counterText}
                   familyText={template.familyText}
-                  photoTransform={staticPhotoTransform}
+                  photoTransform={photoTransform}
+                  onPhotoTransformChange={setPhotoTransform}
                 />
               </div>
             </div>
@@ -416,7 +439,7 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
             unitText={template.unitText}
             counterText={template.counterText}
             familyText={template.familyText}
-            photoTransform={staticPhotoTransform}
+            photoTransform={photoTransform}
           />
         </div>
       </div>
