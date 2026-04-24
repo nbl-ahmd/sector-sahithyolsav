@@ -102,7 +102,7 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
     }
 
     const updateSize = () => {
-      setPreviewWidth(Math.max(280, Math.min(520, wrap.clientWidth)));
+      setPreviewWidth(Math.max(200, Math.min(520, wrap.clientWidth)));
     };
 
     updateSize();
@@ -111,7 +111,7 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
     observer.observe(wrap);
 
     return () => observer.disconnect();
-  }, []);
+  }, [isMobileLayout, mobileStep]);
 
   const selectedFrame = useMemo(() => template?.frames[0], [template]);
 
