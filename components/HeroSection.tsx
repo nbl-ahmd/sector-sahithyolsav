@@ -77,13 +77,16 @@ export function HeroSection({ targetDate }: HeroSectionProps) {
 
   useEffect(() => {
     // Reel rotation
+    if (prefersReducedMotion) {
+      return;
+    }
     const interval = setInterval(() => {
       if (!isHovered) {
         setActive((prev) => (prev + 1) % reels.length);
       }
     }, 6000);
     return () => clearInterval(interval);
-  }, [isHovered]);
+  }, [isHovered, prefersReducedMotion]);
 
   return (
     <section
@@ -107,6 +110,7 @@ export function HeroSection({ targetDate }: HeroSectionProps) {
             const isActive = index === active;
             const isPrev = index === (active - 1 + reels.length) % reels.length;
             const isNext = index === (active + 1) % reels.length;
+            const shouldLoadVideo = isActive || isPrev || isNext;
 
             // Compute transformations based on visual position
             let x = 0;
@@ -164,12 +168,13 @@ export function HeroSection({ targetDate }: HeroSectionProps) {
                 <div className={`absolute inset-0 transition-opacity duration-700 z-20 pointer-events-none ${isActive ? 'bg-transparent' : 'bg-black/60'}`} />
                 
                 <video
-                  src={reelId}
+                  src={shouldLoadVideo ? reelId : undefined}
                   className={`w-full h-full object-cover transition-opacity duration-500 ${isActive ? 'opacity-100 scale-100' : 'opacity-60 scale-105'}`}
-                  autoPlay
+                  autoPlay={isActive}
                   muted
                   loop
                   playsInline
+                  preload={isActive ? "auto" : "metadata"}
                   controls={false}
                 />
                 
@@ -207,12 +212,12 @@ export function HeroSection({ targetDate }: HeroSectionProps) {
           style={prefersReducedMotion ? undefined : { scale: mobilePosterScale }}
         >
           <Image
-            src="/main-poster.jpg"
+            src="/poster-mobile.jpeg"
             alt="Official Poster"
             fill
             sizes="100vw"
             className="object-cover object-top"
-            priority
+            loading="lazy"
           />
           <motion.div
             className="absolute inset-0 bg-slate-950/40"
