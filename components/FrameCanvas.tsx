@@ -104,7 +104,7 @@ export function FrameCanvas({
     if (!photoNatural.width || !photoNatural.height) {
       return 1;
     }
-    return Math.min(width / photoNatural.width, height / photoNatural.height);
+    return Math.max(width / photoNatural.width, height / photoNatural.height);
   }, [photoNatural, width, height]);
 
   const effectiveScale = baseScale * photoTransform.scale;
