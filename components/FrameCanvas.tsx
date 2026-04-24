@@ -398,9 +398,7 @@ export function FrameCanvas({
     const isSelected = activeText === key;
     const hasBackground = layout.showBackground ?? true;
     const verticalPad = hasBackground ? clamp(Math.round(layout.fontSize * 0.16), 2, 10) : 0;
-    const defaultHorizontalPad = hasBackground ? clamp(Math.round(layout.fontSize * 0.34), 4, 20) : 0;
-    const counterHorizontalPad = hasBackground ? clamp(Math.round(layout.fontSize * 0.14), 2, 6) : 0;
-    const horizontalPad = key === "counter" ? counterHorizontalPad : defaultHorizontalPad;
+    const horizontalPad = hasBackground ? clamp(Math.round(layout.fontSize * 0.26), 4, 20) : 0;
     const borderRadius = clamp(
       Number(layout.borderRadius ?? Math.round(layout.fontSize * 0.32)),
       0,
@@ -416,7 +414,8 @@ export function FrameCanvas({
       fontSize: layout.fontSize,
       fontFamily: layout.fontFamily,
       fontWeight: layout.fontWeight,
-      letterSpacing: key === "counter" ? "0.02em" : "0.01em",
+      letterSpacing: key === "counter" ? "0em" : "0.01em",
+      fontVariantNumeric: key === "counter" ? "tabular-nums" : undefined,
       lineHeight: 1.08,
       textAlign,
       cursor: editableText ? "grab" : "default",
@@ -431,7 +430,6 @@ export function FrameCanvas({
       justifyContent: textAlign === "left" ? "flex-start" : textAlign === "right" ? "flex-end" : "center",
       whiteSpace: "nowrap",
       zIndex: 40,
-      minWidth: key === "counter" ? `${clamp(Math.round(layout.fontSize * 1.7), 26, 90)}px` : undefined,
       transition: "box-shadow 120ms ease",
     };
 

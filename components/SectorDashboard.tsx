@@ -14,7 +14,7 @@ export function SectorDashboard() {
   const [data, setData] = useState<LeaderboardSnapshot | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [sharing, setSharing] = useState<"image" | "text" | null>(null);
-  const shareRef = useRef<HTMLDivElement>(null);
+  const sharePosterRef = useRef<HTMLDivElement>(null);
 
   const refresh = async () => {
     setIsLoading(true);
@@ -52,15 +52,15 @@ export function SectorDashboard() {
   }, [data]);
 
   const shareImage = async () => {
-    if (!shareRef.current || !data) {
+    if (!sharePosterRef.current || !data) {
       return;
     }
 
     setSharing("image");
     try {
-      const canvas = await html2canvas(shareRef.current, {
+      const canvas = await html2canvas(sharePosterRef.current, {
         useCORS: true,
-        backgroundColor: "#0a2d31",
+        backgroundColor: "#0b1220",
         scale: 2,
       });
 
@@ -185,7 +185,7 @@ export function SectorDashboard() {
       {/* Leaderboard & Actions */}
       <div className="flex flex-col lg:flex-row gap-6 sm:gap-8">
         <div className="flex-1 w-full order-2 lg:order-1">
-          <Card className="border border-slate-200 shadow-lg bg-white overflow-hidden rounded-2xl" ref={shareRef}>
+          <Card className="border border-slate-200 shadow-lg bg-white overflow-hidden rounded-2xl">
             <CardHeader className="border-b border-slate-100 bg-slate-50/50 p-6 sm:p-8">
               <div className="flex sm:flex-row flex-col sm:items-center justify-between gap-4">
                 <div>
@@ -274,6 +274,54 @@ export function SectorDashboard() {
               </Button>
             </CardContent>
           </Card>
+        </div>
+      </div>
+
+      <div className="fixed -left-[99999px] top-0 pointer-events-none">
+        <div
+          ref={sharePosterRef}
+          style={{ width: 1080, height: 1350 }}
+          className="relative overflow-hidden bg-slate-950 text-white"
+        >
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(59,130,246,0.25),transparent_45%),radial-gradient(circle_at_80%_10%,rgba(245,158,11,0.25),transparent_40%),linear-gradient(180deg,#0f172a_0%,#111827_55%,#0b1220_100%)]" />
+          <div className="relative z-10 p-14">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-slate-300 text-xl font-semibold tracking-[0.2em] uppercase">Live Standings</p>
+                <h2 className="mt-3 text-6xl font-black tracking-tight">Sector Sahityolsav</h2>
+              </div>
+              <div className="text-right">
+                <p className="text-slate-300 text-lg uppercase tracking-widest">Total Frames</p>
+                <p className="text-6xl font-black text-amber-300 tabular-nums">{data.total}</p>
+              </div>
+            </div>
+
+            <div className="mt-10 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm overflow-hidden">
+              <div className="grid grid-cols-[110px_1fr_170px] px-10 py-5 text-slate-300 text-xl font-bold tracking-[0.18em] uppercase border-b border-white/10">
+                <span>Rank</span>
+                <span>Unit</span>
+                <span className="text-right">Frames</span>
+              </div>
+              {data.unitTotals.map((entry, index) => (
+                <div
+                  key={`poster-${entry.unit}`}
+                  className="grid grid-cols-[110px_1fr_170px] items-center px-10 py-6 border-b border-white/5 last:border-b-0"
+                >
+                  <div className={`h-14 w-14 rounded-full flex items-center justify-center text-2xl font-black ${
+                    index === 0 ? "bg-amber-300 text-amber-950" : index === 1 ? "bg-slate-300 text-slate-900" : index === 2 ? "bg-orange-300 text-orange-950" : "bg-white/10 text-slate-200"
+                  }`}>
+                    {index + 1}
+                  </div>
+                  <div className="text-4xl font-extrabold tracking-tight">{entry.unit}</div>
+                  <div className="text-right text-4xl font-black text-cyan-300 tabular-nums">{entry.count}</div>
+                </div>
+              ))}
+            </div>
+
+            <p className="mt-8 text-center text-slate-300 text-xl font-semibold">
+              Real-time ranking by participation
+            </p>
+          </div>
         </div>
       </div>
     </div>

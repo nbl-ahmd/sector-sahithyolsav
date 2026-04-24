@@ -9,7 +9,7 @@ import { FrameCanvas } from "@/components/FrameCanvas";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Upload, Share2, Image as ImageIcon, MapPin, Eye } from "lucide-react";
+import { Upload, Share2, Download, Image as ImageIcon, MapPin, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 interface UserFlowProps {
@@ -34,6 +34,8 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [photoTransform, setPhotoTransform] = useState(staticPhotoTransform);
+  const [mobileStep, setMobileStep] = useState<"upload" | "preview">("upload");
+  const [isMobileLayout, setIsMobileLayout] = useState(false);
 
   const previewWrapRef = useRef<HTMLDivElement>(null);
   const exportRef = useRef<HTMLDivElement>(null);
@@ -85,6 +87,14 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
       cancelled = true;
     };
   }, [effectiveTemplateId]);
+
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 1023px)");
+    const apply = () => setIsMobileLayout(query.matches);
+    apply();
+    query.addEventListener("change", apply);
+    return () => query.removeEventListener("change", apply);
+  }, []);
 
   useEffect(() => {
     const wrap = previewWrapRef.current;
@@ -168,6 +178,7 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
       const dataUrl = await fileToDataUrl(file);
       setPhoto(dataUrl);
       setPhotoTransform(staticPhotoTransform);
+      setMobileStep("preview");
       setError("");
       toast.success("Photo uploaded successfully.");
     } catch {
@@ -175,7 +186,7 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
     }
   };
 
-  const createFramedImage = async () => {
+  const createFramedImage = async (mode: "share" | "download" = "share") => {
     if (!template || !selectedFrame || !photo || !lockedUnit || !exportRef.current) {
       setError("Use your unit link and upload a photo before sharing.");
       return;
@@ -217,9 +228,9 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
       const canvas = await html2canvas(exportRef.current, {
         useCORS: true,
         backgroundColor: null,
-        scale: 1,
-        width: exportViewport.width,
-        height: exportViewport.height,
+        scale: exportViewport.width / previewWidth,
+        width: previewWidth,
+        height: previewHeight,
       });
 
       const blob = await new Promise<Blob | null>((resolve) => {
@@ -237,7 +248,7 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
       const normalizedFamilyName = trimmedFamilyName || "Family";
       const shareCaption = `${normalizedFamilyName}\n${lockedUnit} unit family sahityolsav\n#${reservedCounter}`;
 
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      if (mode === "share" && navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
           title: "Sector Sahityolsav - Family Frame",
@@ -246,7 +257,11 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
       } else {
         downloadBlob(blob, filename);
       }
-      toast.success("Framed photo generated and ready to share!");
+      toast.success(
+        mode === "share"
+          ? "Framed photo generated and ready to share!"
+          : "Framed photo generated and downloaded.",
+      );
     } catch {
       toast.error("Could not generate the framed image. Please try again.");
     } finally {
@@ -306,8 +321,30 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6 space-y-6">
+            {isMobileLayout && (
+              <div className="grid grid-cols-2 gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={mobileStep === "upload" ? "default" : "ghost"}
+                  className="h-9 text-xs rounded-md"
+                  onClick={() => setMobileStep("upload")}
+                >
+                  1. Upload
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={mobileStep === "preview" ? "default" : "ghost"}
+                  className="h-9 text-xs rounded-md"
+                  onClick={() => setMobileStep("preview")}
+                >
+                  2. Preview & Share
+                </Button>
+              </div>
+            )}
             
-            <div className="relative">
+            <div className={`relative ${isMobileLayout && mobileStep !== "upload" ? "hidden" : ""}`}>
               <input 
                 type="file" 
                 accept="image/*" 
@@ -325,7 +362,7 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className={`space-y-2 ${isMobileLayout ? "hidden" : ""}`}>
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Family Name (Optional)</p>
               <Input
                 value={familyName}
@@ -352,16 +389,75 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
               </div>
             )}
 
-            <Button
-              size="lg"
-              className="w-full h-14 text-base font-semibold shadow-md transition-all gap-2"
-              onClick={createFramedImage}
-              disabled={working || !photo}
-              variant={photo ? "default" : "secondary"}
+            {isMobileLayout && (
+              <div className={`${mobileStep !== "preview" ? "hidden" : ""}`}>
+                <div className="space-y-2 mb-3">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Family Name (Optional)
+                  </p>
+                  <Input
+                    value={familyName}
+                    onChange={(event) => setFamilyName(event.target.value.slice(0, 120))}
+                    placeholder="e.g. Hidaya Family"
+                    className="h-10 bg-white"
+                  />
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-100 p-2">
+                  <div
+                    ref={previewWrapRef}
+                    className={`w-full max-w-[520px] mx-auto flex items-center justify-center transition-opacity duration-300 ${photo ? 'opacity-100' : 'opacity-40 grayscale-[50%]'}`}
+                  >
+                    <div
+                      ref={exportRef}
+                      className="shadow-2xl rounded-sm overflow-hidden"
+                      style={{ width: previewWidth, height: previewHeight }}
+                    >
+                      <FrameCanvas
+                        frameImage={selectedFrame.image}
+                        photo={photo}
+                        width={previewWidth}
+                        height={previewHeight}
+                        unitLabel={`${lockedUnit} Unit`}
+                        familyName={trimmedFamilyName}
+                        counterLabel={`#${displayCounter}`}
+                        unitText={template.unitText}
+                        counterText={template.counterText}
+                        familyText={template.familyText}
+                        photoTransform={photoTransform}
+                        onPhotoTransformChange={setPhotoTransform}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div
+              className={`grid grid-cols-1 sm:grid-cols-2 gap-3 ${
+                isMobileLayout && mobileStep !== "preview" ? "hidden" : ""
+              }`}
             >
-              <Share2 className="w-5 h-5" />
-              {working ? "Generating your frame..." : photo ? "Generate & Share Frame" : "Upload photo to continue"}
-            </Button>
+              <Button
+                size="lg"
+                className="w-full h-14 text-base font-semibold shadow-md transition-all gap-2"
+                onClick={() => createFramedImage("share")}
+                disabled={working || !photo}
+                variant={photo ? "default" : "secondary"}
+              >
+                <Share2 className="w-5 h-5" />
+                {working ? "Generating..." : photo ? "Generate & Share" : "Upload photo"}
+              </Button>
+              <Button
+                size="lg"
+                className="w-full h-14 text-base font-semibold transition-all gap-2"
+                onClick={() => createFramedImage("download")}
+                disabled={working || !photo}
+                variant="outline"
+              >
+                <Download className="w-5 h-5" />
+                {working ? "Generating..." : "Download / Save"}
+              </Button>
+            </div>
 
           </CardContent>
         </Card>
@@ -375,6 +471,7 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
         </Card>
       </div>
 
+      {!isMobileLayout && (
       <div className="lg:col-span-7">
         <Card className="border-slate-200 shadow-sm overflow-hidden sticky top-8">
           <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-4">
@@ -396,7 +493,11 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
               </div>
             )}
             <div ref={previewWrapRef} className={`w-full max-w-[520px] mx-auto p-4 md:p-8 flex items-center justify-center transition-opacity duration-300 ${photo ? 'opacity-100' : 'opacity-40 grayscale-[50%]'}`}>
-              <div className="shadow-2xl rounded-sm overflow-hidden" style={{ width: previewWidth }}>
+              <div
+                ref={exportRef}
+                className="shadow-2xl rounded-sm overflow-hidden"
+                style={{ width: previewWidth, height: previewHeight }}
+              >
                 <FrameCanvas
                   frameImage={selectedFrame.image}
                   photo={photo}
@@ -416,33 +517,7 @@ export function UserFlow({ templateId, preselectedUnit }: UserFlowProps) {
           </CardContent>
         </Card>
       </div>
-
-      <div
-        style={{
-          position: "fixed",
-          left: -10000,
-          top: -10000,
-          width: exportViewport.width,
-          height: exportViewport.height,
-          pointerEvents: "none",
-        }}
-      >
-        <div ref={exportRef}>
-          <FrameCanvas
-            frameImage={selectedFrame.image}
-            photo={photo}
-            width={exportViewport.width}
-            height={exportViewport.height}
-            unitLabel={`${lockedUnit} Unit`}
-            familyName={trimmedFamilyName}
-            counterLabel={`#${displayCounter}`}
-            unitText={template.unitText}
-            counterText={template.counterText}
-            familyText={template.familyText}
-            photoTransform={photoTransform}
-          />
-        </div>
-      </div>
+      )}
     </div>
   );
 }
