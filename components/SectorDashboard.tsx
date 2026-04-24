@@ -42,10 +42,78 @@ export function SectorDashboard() {
       return "";
     }
 
+    const toEmojiNumber = (value: number) => {
+      const map: Record<string, string> = {
+        "0": "0️⃣",
+        "1": "1️⃣",
+        "2": "2️⃣",
+        "3": "3️⃣",
+        "4": "4️⃣",
+        "5": "5️⃣",
+        "6": "6️⃣",
+        "7": "7️⃣",
+        "8": "8️⃣",
+        "9": "9️⃣",
+      };
+      return String(Math.max(0, Math.floor(value)))
+        .split("")
+        .map((digit) => map[digit] ?? digit)
+        .join("");
+    };
+
+    const mlUnit: Record<string, string> = {
+      Kakkad: "കക്കാട്",
+      Chonad: "ചോണാട്",
+      "North Karassery": "നോർത്ത് കാരശ്ശേരി",
+      Sarkkarparamb: "സർക്കാർപറമ്പ്",
+      Velliyaparamb: "വലിയപറമ്പ്",
+      Karuthaparamb: "കറുത്തപറമ്പ്",
+      Nellikkaparamb: "നെല്ലിക്കപറമ്പ്",
+      Karassery: "കാരശ്ശേരി",
+    };
+
+    const rows = data.unitTotals.map((entry) => ({
+      unit: mlUnit[entry.unit] ?? entry.unit,
+      count: entry.count,
+    }));
+
+    const milestoneSteps = [25, 50, 75, 100, 125, 150, 200, 250, 300];
+    const getCrossedMilestone = (value: number) =>
+      milestoneSteps
+        .filter((step) => value >= step)
+        .at(-1);
+
+    const sectorMilestone = getCrossedMilestone(data.total);
+    const topMilestoneEntry = [...rows]
+      .sort((a, b) => b.count - a.count)
+      .map((entry) => ({ ...entry, milestone: getCrossedMilestone(entry.count) }))
+      .find((entry) => entry.milestone !== undefined);
+
+    let commentaryLine = "";
+    if (sectorMilestone) {
+      commentaryLine = `*കാരശ്ശേരി സെക്ടർ* ${toEmojiNumber(sectorMilestone)}`;
+    } else if (topMilestoneEntry?.milestone) {
+      commentaryLine = `*${topMilestoneEntry.unit}* ${toEmojiNumber(topMilestoneEntry.milestone)} 📈`;
+    }
+
+    const top1 = rows[0];
+    const top2 = rows[1];
+    const top3 = rows[2];
+    const rest = rows.slice(3);
+
     const lines = [
-      `Sector Sahityolsav Leaderboard`,
-      `Total Photos Framed: ${data.total}`,
-      ...data.unitTotals.map((entry, index) => `${index + 1}. ${entry.unit} - ${entry.count}`),
+      "🌹*ഫാമിലി സാഹിത്യോത്സവ്*🌹",
+      "",
+      ...(commentaryLine ? [commentaryLine, ""] : []),
+      ...(top1 ? [`* ${top1.unit} ${toEmojiNumber(top1.count)}🥇📈`] : []),
+      ...(top2 ? [`* ${top2.unit} ${toEmojiNumber(top2.count)} 🥈📈`] : []),
+      ...(top3 ? [`* ${top3.unit} - *${toEmojiNumber(top3.count)}* 💥`] : []),
+      "",
+      ...rest.map((entry) => `* ${entry.unit} -${toEmojiNumber(entry.count)}`),
+      "",
+      `TOTAL -${toEmojiNumber(data.total)}🎉📈`,
+      "",
+      "`Family sahityotsav karassery sector`",
     ];
 
     return lines.join("\n");
