@@ -14,6 +14,7 @@ export function SectorDashboard() {
   const [data, setData] = useState<LeaderboardSnapshot | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [sharing, setSharing] = useState<"image" | "text" | null>(null);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
   const sharePosterRef = useRef<HTMLDivElement>(null);
 
   const refresh = async () => {
@@ -26,6 +27,7 @@ export function SectorDashboard() {
 
       const snapshot = (await response.json()) as LeaderboardSnapshot;
       setData(snapshot);
+      setLastUpdatedAt(new Date().toISOString());
     } catch {
       toast.error("Could not fetch leaderboard right now.");
     } finally {
@@ -201,6 +203,17 @@ export function SectorDashboard() {
   const activeUnits = data.unitTotals.filter((entry) => entry.count > 0).length;
   const maxCount = Math.max(...data.unitTotals.map(u => u.count), 1);
 
+  const updatedAtLabel = lastUpdatedAt
+    ? new Date(lastUpdatedAt).toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "--";
+
+
   return (
     <div className="space-y-6 sm:space-y-10 mb-12">
       {/* Overview Stats */}
@@ -259,11 +272,11 @@ export function SectorDashboard() {
                 <div>
                   <CardTitle className="text-xl sm:text-2xl flex items-center gap-3 font-extrabold mb-2 text-slate-900 tracking-tight">
                     <Activity className="w-6 h-6 text-primary p-1 bg-primary/10 rounded-md" />
-                    Live Standings
+                   Live Standings
                   </CardTitle>
-                  <CardDescription className="text-sm sm:text-base font-medium">
-                    Real-time ranking of area units by participation.
-                  </CardDescription>
+                    <CardDescription className="text-sm sm:text-base font-medium">
+                    Current status of all units in the Family Sahityolsav
+                    </CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -273,7 +286,7 @@ export function SectorDashboard() {
                   <tr>
                     <th className="px-4 sm:px-6 py-4 sm:py-5 w-16 sm:w-20 text-center">Rank</th>
                     <th className="px-4 sm:px-6 py-4 sm:py-5">Unit Name</th>
-                    <th className="px-4 sm:px-6 py-4 sm:py-5 w-24 text-right">Frames</th>
+                    <th className="px-4 sm:px-6 py-4 sm:py-5 w-24 text-right">Count</th>
                     <th className="px-4 sm:px-6 py-4 sm:py-5 w-1/4 sm:w-1/3 min-w-[150px]">Activity Progress</th>
                   </tr>
                 </thead>
@@ -356,19 +369,19 @@ export function SectorDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-slate-300 text-xl font-semibold tracking-[0.2em] uppercase">Live Standings</p>
-                <h2 className="mt-3 text-6xl font-black tracking-tight">Sector Sahityolsav</h2>
+                <h2 className="mt-3 text-6xl font-black tracking-tight">Family Sahityolsav</h2>
               </div>
               <div className="text-right">
-                <p className="text-slate-300 text-lg uppercase tracking-widest">Total Frames</p>
+                <p className="text-slate-300 text-lg uppercase tracking-widest">Total</p>
                 <p className="text-6xl font-black text-amber-300 tabular-nums">{data.total}</p>
               </div>
             </div>
 
             <div className="mt-10 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm overflow-hidden">
               <div className="grid grid-cols-[110px_1fr_170px] px-10 py-5 text-slate-300 text-xl font-bold tracking-[0.18em] uppercase border-b border-white/10">
-                <span>Rank</span>
+                <span></span>
                 <span>Unit</span>
-                <span className="text-right">Frames</span>
+                <span className="text-right">Count</span>
               </div>
               {data.unitTotals.map((entry, index) => (
                 <div
@@ -386,9 +399,13 @@ export function SectorDashboard() {
               ))}
             </div>
 
-            <p className="mt-8 text-center text-slate-300 text-xl font-semibold">
-              Real-time ranking by participation
-            </p>
+             <div className="mt-8 pt-5 flex items-center justify-between text-lg text-slate-200">
+              <span>
+                <span style={{ fontFamily: '"Cooper Black", "CooperBlack", "Bookman Old Style", serif' }}>SSF</span>{" "}
+                Karassery Sector
+              </span>
+              <span>Updated at {updatedAtLabel}</span>
+            </div>
           </div>
         </div>
       </div>

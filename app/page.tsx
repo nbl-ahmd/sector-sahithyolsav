@@ -17,6 +17,11 @@ export default async function HomePage() {
   const [leaderboardData, appSettings, todayLeadingUnit] = await Promise.all([getLeaderboard(), getAppSettings(), getTodayLeadingUnit()]);
   const leadingUnit = leaderboardData.unitTotals[0];
   const unitCountMap = new Map(leaderboardData.unitTotals.map((entry) => [entry.unit, entry.count]));
+ const sortedUnits = [...UNIT_LIST].sort((leftUnit, rightUnit) => {
+    const leftCount = unitCountMap.get(leftUnit) ?? 0;
+    const rightCount = unitCountMap.get(rightUnit) ?? 0;
+    return rightCount - leftCount || leftUnit.localeCompare(rightUnit);
+  });
 
   return (
     <AppShell>
@@ -145,7 +150,7 @@ export default async function HomePage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
-              {UNIT_LIST.map((unit) => (
+               {sortedUnits.map((unit) => (
                 <tr key={unit} className="hover:bg-slate-50/80 transition-all duration-200 group">
                   <td className="px-3 sm:px-6 py-3 sm:py-5 font-bold text-slate-900 text-sm sm:text-base">
                     <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
