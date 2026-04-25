@@ -1,13 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Baloo+Chettan+2:wght@400;500;600;700;800&family=Chilanka&family=Manjari:wght@400;700&family=Montserrat:wght@400;500;600;700;800&family=Noto+Sans+Malayalam:wght@400;500;600;700;800&family=Noto+Serif+Malayalam:wght@400;500;600;700&family=Oswald:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap");
 
-@font-face {
-  font-family: "Cooper Black Poster";
-  src: url("/fonts/Cooper Black Regular.ttf") format("truetype");
-  font-style: normal;
-  font-weight: 700;
-  font-display: block;
-}
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

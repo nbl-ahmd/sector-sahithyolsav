@@ -6,7 +6,6 @@ import { downloadBlob, copyToClipboard } from "@/lib/client-utils";
 import { LeaderboardSnapshot } from "@/lib/types";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Trophy, Share2, Crown, Copy, RefreshCcw, Image as ImageIcon, MapPin, Users, Activity } from "lucide-react";
 import { toast } from "sonner";
 
@@ -60,11 +59,6 @@ export function SectorDashboard() {
 
     setSharing("image");
     try {
-      if (document.fonts?.load) {
-        await document.fonts.load('700 1em "Cooper Black Poster"');
-        await document.fonts.ready;
-      }
-
       const canvas = await html2canvas(exportPosterRef.current, {
         useCORS: true,
         backgroundColor: null,
@@ -139,7 +133,7 @@ export function SectorDashboard() {
   const leading = data.unitTotals[0];
   const activeUnits = data.unitTotals.filter((entry) => entry.count > 0).length;
   const maxCount = Math.max(...data.unitTotals.map(u => u.count), 1);
-  const exportRows = data.unitTotals.slice(0, 8);
+  const exportRows = data.unitTotals.slice(0, 10);
   const updatedAtLabel = lastUpdatedAt
     ? new Date(lastUpdatedAt).toLocaleString("en-IN", {
         day: "2-digit",
@@ -202,52 +196,53 @@ export function SectorDashboard() {
       {/* Leaderboard & Actions */}
       <div className="flex flex-col lg:flex-row gap-6 sm:gap-8">
         <div className="flex-1 w-full order-2 lg:order-1">
-          <Card className="border border-slate-200 shadow-lg bg-white overflow-hidden rounded-2xl">
-            <CardHeader className="border-b border-slate-100 bg-slate-50/50 p-6 sm:p-8">
+          <Card className="border border-white/10 shadow-2xl overflow-hidden rounded-2xl bg-[radial-gradient(circle_at_12%_0%,rgba(59,130,246,0.2),transparent_35%),radial-gradient(circle_at_92%_0%,rgba(251,191,36,0.2),transparent_35%),linear-gradient(140deg,#071228_0%,#0e1f3f_45%,#111827_100%)]">
+            <CardHeader className="border-b border-white/10 bg-white/[0.02] p-6 sm:p-8">
               <div className="flex sm:flex-row flex-col sm:items-center justify-between gap-4">
                 <div>
-                  <CardTitle className="text-xl sm:text-2xl flex items-center gap-3 font-extrabold mb-2 text-slate-900 tracking-tight">
-                    <Activity className="w-6 h-6 text-primary p-1 bg-primary/10 rounded-md" />
+                  <CardTitle className="text-xl sm:text-2xl flex items-center gap-3 font-extrabold mb-2 text-white tracking-tight">
+                    <Activity className="w-6 h-6 text-cyan-300 p-1 bg-cyan-500/10 rounded-md" />
                     Sector Family Sahityotsav
                   </CardTitle>
-                  {/* <CardDescription className="text-sm sm:text-base font-medium">
-                    Updated at {updatedAtLabel}
-                  </CardDescription> */}
+                  <CardDescription className="text-[11px] sm:text-xs uppercase tracking-[0.25em] text-white/60 font-semibold">
+                    Live Standings
+                  </CardDescription>
                 </div>
               </div>
             </CardHeader>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm whitespace-nowrap min-w-[600px]">
-                <thead className="bg-slate-100/80 border-b border-slate-200 text-[10px] sm:text-xs font-black text-slate-500 uppercase tracking-widest sticky top-0">
+              <table className="w-full text-left text-sm whitespace-nowrap min-w-[520px]">
+                <thead className="bg-white/[0.02] border-b border-white/10 text-[10px] sm:text-xs font-black text-white/60 uppercase tracking-[0.25em] sticky top-0">
                   <tr>
                     <th className="px-4 sm:px-6 py-4 sm:py-5 w-16 sm:w-20 text-center">Rank</th>
                     <th className="px-4 sm:px-6 py-4 sm:py-5">Unit Name</th>
                     <th className="px-4 sm:px-6 py-4 sm:py-5 w-24 text-right">Frames</th>
-                    <th className="px-4 sm:px-6 py-4 sm:py-5 w-1/4 sm:w-1/3 min-w-[150px]">Activity Progress</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
-                  {data.unitTotals.map((entry, index) => {
-                    const progress = (entry.count / maxCount) * 100;
-                    return (
-                      <tr key={entry.unit} className="hover:bg-slate-50/80 transition-all duration-200 group">
+                <tbody className="divide-y divide-white/5">
+                  {data.unitTotals.map((entry, index) => (
+                      <tr key={entry.unit} className="hover:bg-white/[0.03] transition-all duration-200 group">
                         <td className="px-4 sm:px-6 py-4 sm:py-5 text-center">
-                          <div className={`inline-flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full font-black text-sm shadow-sm ring-4 ring-white group-hover:scale-110 transition-transform ${index === 0 ? 'bg-gradient-to-br from-amber-200 to-yellow-400 text-amber-900 shadow-amber-200/50' : index === 1 ? 'bg-gradient-to-br from-slate-200 to-gray-300 text-slate-800 shadow-slate-300/50' : index === 2 ? 'bg-gradient-to-br from-orange-200 to-red-300 text-red-900 shadow-orange-300/50' : 'bg-slate-100/80 text-slate-500'}`}>
+                          <div className={`inline-flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-full font-black text-base shadow-lg group-hover:scale-110 transition-transform ${
+                            index === 0
+                              ? "bg-[#F8D24F] text-[#5B4200]"
+                              : index === 1
+                              ? "bg-[#D9E0E8] text-[#344050]"
+                              : index === 2
+                              ? "bg-[#F5C38B] text-[#5A3506]"
+                              : "bg-[#2E3B57] text-white/80"
+                          }`}>
                             {index + 1}
                           </div>
                         </td>
-                        <td className="px-4 sm:px-6 py-4 sm:py-5 font-bold text-slate-900 text-base group-hover:text-primary transition-colors">{entry.unit}</td>
-                        <td className="px-4 sm:px-6 py-4 sm:py-5 font-black text-primary text-xl text-right tabular-nums tracking-tight">{entry.count}</td>
-                        <td className="px-4 sm:px-6 py-4 sm:py-5">
-                          <Progress value={progress || 0} className="h-2.5 sm:h-3 w-full bg-slate-100 shadow-inner overflow-hidden" indicatorClassName={`${index === 0 ? 'bg-amber-500' : index === 1 ? 'bg-slate-400' : index === 2 ? 'bg-orange-500' : 'bg-primary'}`} />
-                        </td>
+                        <td className="px-4 sm:px-6 py-4 sm:py-5 font-bold text-white text-base sm:text-[34px] group-hover:text-cyan-100 transition-colors leading-none">{entry.unit}</td>
+                        <td className="px-4 sm:px-6 py-4 sm:py-5 font-black text-cyan-300 text-3xl sm:text-4xl text-right tabular-nums tracking-tight">{entry.count}</td>
                       </tr>
-                    );
-                  })}
+                    ))}
                 </tbody>
               </table>
             </div>
-            <div className="px-6 sm:px-8 py-3 border-t border-slate-100 bg-slate-50/60 text-xs sm:text-sm text-slate-600 font-medium">
+            <div className="px-6 sm:px-8 py-3 border-t border-white/10 bg-white/[0.02] text-xs sm:text-sm text-white/75 font-medium">
               Updated at {updatedAtLabel}
             </div>
           </Card>
@@ -300,70 +295,48 @@ export function SectorDashboard() {
       <div className="fixed -left-[99999px] -top-[99999px] pointer-events-none" aria-hidden="true">
         <div
           ref={exportPosterRef}
-          className="w-[1080px] h-[1350px] p-6 overflow-hidden text-white"
+          className="w-[1080px] p-12 rounded-[36px] overflow-hidden text-white"
           style={{
             background:
-              "radial-gradient(circle at 12% 8%, rgba(59,130,246,0.28), transparent 22%), radial-gradient(circle at 90% 8%, rgba(251,191,36,0.25), transparent 22%), linear-gradient(180deg, #081427 0%, #111827 55%, #09111d 100%)",
+              "radial-gradient(900px 500px at 15% 0%, rgba(245,158,11,0.22), transparent 60%), radial-gradient(850px 520px at 100% 100%, rgba(14,165,233,0.25), transparent 62%), linear-gradient(140deg, #020617 0%, #0f172a 45%, #042f2e 100%)",
           }}
         >
-          <div className="h-full rounded-[32px] border border-white/10 bg-white/[0.03] backdrop-blur-sm px-8 py-7 flex flex-col overflow-hidden">
+          <div className="rounded-[28px] border border-white/20 bg-white/5 backdrop-blur-sm p-10">
             <div className="flex items-start justify-between gap-6 mb-8">
-              <div className="space-y-2">
-                <p className="text-[14px] sm:text-[15px] font-bold uppercase tracking-[0.4em] text-white/65">Live Standings</p>
-                <h2 className="text-[62px] leading-[0.95] font-black tracking-tight text-white">Sector Family Sahityotsav</h2>
+              <div>
+                <p className="text-amber-300 text-lg font-semibold tracking-[0.18em] uppercase mb-3">Live Standings</p>
+                <h2 className="text-6xl font-black leading-tight tracking-tight">Sector Family Sahityotsav</h2>
+                <p className="mt-3 text-2xl text-slate-200">Updated at {updatedAtLabel}</p>
               </div>
-              <div className="text-right pt-2">
-                <p className="text-[14px] font-bold uppercase tracking-[0.35em] text-white/55">Total Frames</p>
-                <p className="text-[56px] leading-none font-black text-amber-300 tabular-nums">{data.total}</p>
+              <div className="px-5 py-3 rounded-2xl bg-amber-400/20 border border-amber-300/40 text-right">
+                <p className="text-sm uppercase tracking-widest text-amber-100">Total Frames</p>
+                <p className="text-4xl font-black text-amber-200 tabular-nums">{data.total}</p>
               </div>
             </div>
 
-            <div className="flex-1 rounded-[24px] border border-white/10 bg-white/[0.04] overflow-hidden">
-              <div className="grid grid-cols-[88px_minmax(0,1fr)_120px] items-center px-6 py-5 border-b border-white/10 text-[14px] font-black uppercase tracking-[0.35em] text-white/60">
-                <div className="text-center">Rank</div>
-                <div>Unit</div>
-                <div className="text-right">Frames</div>
-              </div>
-
-              <div className="divide-y divide-white/6">
-                {exportRows.map((entry, index) => {
-                  const rankStyle =
-                    index === 0
-                      ? "bg-[#F7D34A] text-[#4A3600]"
-                      : index === 1
-                      ? "bg-[#D8DEE8] text-[#314055]"
-                      : index === 2
-                      ? "bg-[#F5BE74] text-[#5A3603]"
-                      : "bg-[#3C465A] text-white/80";
-
-                  return (
-                    <div key={entry.unit} className="grid grid-cols-[88px_minmax(0,1fr)_120px] items-center px-6 py-7 min-h-[96px]">
-                      <div className="flex justify-center">
-                        <div className={`w-11 h-11 rounded-full flex items-center justify-center font-black text-[22px] shadow-sm ring-4 ring-white/10 ${rankStyle}`}>
+            <div className="space-y-3">
+              {exportRows.map((entry, index) => {
+                const progress = Math.max(6, (entry.count / maxCount) * 100);
+                return (
+                  <div key={entry.unit} className="relative rounded-2xl border border-white/15 bg-white/5 px-5 py-4 overflow-hidden">
+                    <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-300/30 to-sky-300/20" style={{ width: `${progress}%` }} />
+                    <div className="relative z-10 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-4 min-w-0">
+                        <span className="w-10 h-10 rounded-full bg-white/15 border border-white/20 flex items-center justify-center font-bold text-lg tabular-nums">
                           {index + 1}
-                        </div>
+                        </span>
+                        <span className="text-2xl font-bold truncate">{entry.unit}</span>
                       </div>
-                      <div className="min-w-0 pr-4">
-                        <div className="text-[33px] leading-none font-extrabold tracking-tight text-white truncate">
-                          {entry.unit}
-                        </div>
-                      </div>
-                      <div className="text-right text-[28px] leading-none font-black tabular-nums text-cyan-300">
-                        {entry.count}
-                      </div>
+                      <span className="text-3xl font-black tabular-nums text-amber-200">{entry.count}</span>
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                );
+              })}
             </div>
 
-            <div className="pt-7 text-center text-[18px] font-semibold text-white/72">
-              Real-time ranking by participation
-            </div>
-
-            <div className="mt-6 pt-5 border-t border-white/10 flex items-center justify-between text-[18px] text-white/78">
+            <div className="mt-8 pt-5 border-t border-white/15 flex items-center justify-between text-lg text-slate-200">
               <span>
-                <span style={{ fontFamily: '"Cooper Black Poster", serif', fontWeight: 700 }}>SSF</span>{" "}
+                <span style={{ fontFamily: '"Cooper Black", "CooperBlack", "Bookman Old Style", serif' }}>SSF</span>{" "}
                 Karassery Sector
               </span>
               <span>Updated at {updatedAtLabel}</span>
