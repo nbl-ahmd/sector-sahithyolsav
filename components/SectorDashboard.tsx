@@ -6,7 +6,6 @@ import { downloadBlob, copyToClipboard } from "@/lib/client-utils";
 import { LeaderboardSnapshot } from "@/lib/types";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Trophy, Share2, Crown, Copy, RefreshCcw, Image as ImageIcon, MapPin, Users, Activity } from "lucide-react";
 import { toast } from "sonner";
 
@@ -197,52 +196,53 @@ export function SectorDashboard() {
       {/* Leaderboard & Actions */}
       <div className="flex flex-col lg:flex-row gap-6 sm:gap-8">
         <div className="flex-1 w-full order-2 lg:order-1">
-          <Card className="border border-slate-200 shadow-lg bg-white overflow-hidden rounded-2xl">
-            <CardHeader className="border-b border-slate-100 bg-slate-50/50 p-6 sm:p-8">
+          <Card className="border border-white/10 shadow-2xl overflow-hidden rounded-2xl bg-[radial-gradient(circle_at_12%_0%,rgba(59,130,246,0.2),transparent_35%),radial-gradient(circle_at_92%_0%,rgba(251,191,36,0.2),transparent_35%),linear-gradient(140deg,#071228_0%,#0e1f3f_45%,#111827_100%)]">
+            <CardHeader className="border-b border-white/10 bg-white/[0.02] p-6 sm:p-8">
               <div className="flex sm:flex-row flex-col sm:items-center justify-between gap-4">
                 <div>
-                  <CardTitle className="text-xl sm:text-2xl flex items-center gap-3 font-extrabold mb-2 text-slate-900 tracking-tight">
-                    <Activity className="w-6 h-6 text-primary p-1 bg-primary/10 rounded-md" />
+                  <CardTitle className="text-xl sm:text-2xl flex items-center gap-3 font-extrabold mb-2 text-white tracking-tight">
+                    <Activity className="w-6 h-6 text-cyan-300 p-1 bg-cyan-500/10 rounded-md" />
                     Sector Family Sahityotsav
                   </CardTitle>
-                  {/* <CardDescription className="text-sm sm:text-base font-medium">
-                    Updated at {updatedAtLabel}
-                  </CardDescription> */}
+                  <CardDescription className="text-[11px] sm:text-xs uppercase tracking-[0.25em] text-white/60 font-semibold">
+                    Live Standings
+                  </CardDescription>
                 </div>
               </div>
             </CardHeader>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm whitespace-nowrap min-w-[600px]">
-                <thead className="bg-slate-100/80 border-b border-slate-200 text-[10px] sm:text-xs font-black text-slate-500 uppercase tracking-widest sticky top-0">
+              <table className="w-full text-left text-sm whitespace-nowrap min-w-[520px]">
+                <thead className="bg-white/[0.02] border-b border-white/10 text-[10px] sm:text-xs font-black text-white/60 uppercase tracking-[0.25em] sticky top-0">
                   <tr>
                     <th className="px-4 sm:px-6 py-4 sm:py-5 w-16 sm:w-20 text-center">Rank</th>
                     <th className="px-4 sm:px-6 py-4 sm:py-5">Unit Name</th>
                     <th className="px-4 sm:px-6 py-4 sm:py-5 w-24 text-right">Frames</th>
-                    <th className="px-4 sm:px-6 py-4 sm:py-5 w-1/4 sm:w-1/3 min-w-[150px]">Activity Progress</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
-                  {data.unitTotals.map((entry, index) => {
-                    const progress = (entry.count / maxCount) * 100;
-                    return (
-                      <tr key={entry.unit} className="hover:bg-slate-50/80 transition-all duration-200 group">
+                <tbody className="divide-y divide-white/5">
+                  {data.unitTotals.map((entry, index) => (
+                      <tr key={entry.unit} className="hover:bg-white/[0.03] transition-all duration-200 group">
                         <td className="px-4 sm:px-6 py-4 sm:py-5 text-center">
-                          <div className={`inline-flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full font-black text-sm shadow-sm ring-4 ring-white group-hover:scale-110 transition-transform ${index === 0 ? 'bg-gradient-to-br from-amber-200 to-yellow-400 text-amber-900 shadow-amber-200/50' : index === 1 ? 'bg-gradient-to-br from-slate-200 to-gray-300 text-slate-800 shadow-slate-300/50' : index === 2 ? 'bg-gradient-to-br from-orange-200 to-red-300 text-red-900 shadow-orange-300/50' : 'bg-slate-100/80 text-slate-500'}`}>
+                          <div className={`inline-flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-full font-black text-base shadow-lg group-hover:scale-110 transition-transform ${
+                            index === 0
+                              ? "bg-[#F8D24F] text-[#5B4200]"
+                              : index === 1
+                              ? "bg-[#D9E0E8] text-[#344050]"
+                              : index === 2
+                              ? "bg-[#F5C38B] text-[#5A3506]"
+                              : "bg-[#2E3B57] text-white/80"
+                          }`}>
                             {index + 1}
                           </div>
                         </td>
-                        <td className="px-4 sm:px-6 py-4 sm:py-5 font-bold text-slate-900 text-base group-hover:text-primary transition-colors">{entry.unit}</td>
-                        <td className="px-4 sm:px-6 py-4 sm:py-5 font-black text-primary text-xl text-right tabular-nums tracking-tight">{entry.count}</td>
-                        <td className="px-4 sm:px-6 py-4 sm:py-5">
-                          <Progress value={progress || 0} className="h-2.5 sm:h-3 w-full bg-slate-100 shadow-inner overflow-hidden" indicatorClassName={`${index === 0 ? 'bg-amber-500' : index === 1 ? 'bg-slate-400' : index === 2 ? 'bg-orange-500' : 'bg-primary'}`} />
-                        </td>
+                        <td className="px-4 sm:px-6 py-4 sm:py-5 font-bold text-white text-base sm:text-[34px] group-hover:text-cyan-100 transition-colors leading-none">{entry.unit}</td>
+                        <td className="px-4 sm:px-6 py-4 sm:py-5 font-black text-cyan-300 text-3xl sm:text-4xl text-right tabular-nums tracking-tight">{entry.count}</td>
                       </tr>
-                    );
-                  })}
+                    ))}
                 </tbody>
               </table>
             </div>
-            <div className="px-6 sm:px-8 py-3 border-t border-slate-100 bg-slate-50/60 text-xs sm:text-sm text-slate-600 font-medium">
+            <div className="px-6 sm:px-8 py-3 border-t border-white/10 bg-white/[0.02] text-xs sm:text-sm text-white/75 font-medium">
               Updated at {updatedAtLabel}
             </div>
           </Card>
