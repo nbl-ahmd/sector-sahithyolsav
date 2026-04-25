@@ -15,7 +15,7 @@ export function SectorDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [sharing, setSharing] = useState<"image" | "text" | null>(null);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
-  const shareRef = useRef<HTMLDivElement>(null);
+  const exportPosterRef = useRef<HTMLDivElement>(null);
 
   const refresh = async () => {
     setIsLoading(true);
@@ -54,15 +54,15 @@ export function SectorDashboard() {
   }, [data]);
 
   const shareImage = async () => {
-    if (!shareRef.current || !data) {
+    if (!exportPosterRef.current || !data) {
       return;
     }
 
     setSharing("image");
     try {
-      const canvas = await html2canvas(shareRef.current, {
+      const canvas = await html2canvas(exportPosterRef.current, {
         useCORS: true,
-        backgroundColor: "#0a2d31",
+        backgroundColor: null,
         scale: 2,
       });
 
@@ -134,6 +134,7 @@ export function SectorDashboard() {
   const leading = data.unitTotals[0];
   const activeUnits = data.unitTotals.filter((entry) => entry.count > 0).length;
   const maxCount = Math.max(...data.unitTotals.map(u => u.count), 1);
+  const exportRows = data.unitTotals.slice(0, 10);
   const updatedAtLabel = lastUpdatedAt
     ? new Date(lastUpdatedAt).toLocaleString("en-IN", {
         day: "2-digit",
@@ -196,7 +197,7 @@ export function SectorDashboard() {
       {/* Leaderboard & Actions */}
       <div className="flex flex-col lg:flex-row gap-6 sm:gap-8">
         <div className="flex-1 w-full order-2 lg:order-1">
-          <Card className="border border-slate-200 shadow-lg bg-white overflow-hidden rounded-2xl" ref={shareRef}>
+          <Card className="border border-slate-200 shadow-lg bg-white overflow-hidden rounded-2xl">
             <CardHeader className="border-b border-slate-100 bg-slate-50/50 p-6 sm:p-8">
               <div className="flex sm:flex-row flex-col sm:items-center justify-between gap-4">
                 <div>
@@ -288,6 +289,56 @@ export function SectorDashboard() {
               </Button>
             </CardContent>
           </Card>
+        </div>
+      </div>
+
+      <div className="fixed -left-[99999px] -top-[99999px] pointer-events-none" aria-hidden="true">
+        <div
+          ref={exportPosterRef}
+          className="w-[1080px] p-12 rounded-[36px] overflow-hidden text-white"
+          style={{
+            background:
+              "radial-gradient(900px 500px at 15% 0%, rgba(245,158,11,0.22), transparent 60%), radial-gradient(850px 520px at 100% 100%, rgba(14,165,233,0.25), transparent 62%), linear-gradient(140deg, #020617 0%, #0f172a 45%, #042f2e 100%)",
+          }}
+        >
+          <div className="rounded-[28px] border border-white/20 bg-white/5 backdrop-blur-sm p-10">
+            <div className="flex items-start justify-between gap-6 mb-8">
+              <div>
+                <p className="text-amber-300 text-lg font-semibold tracking-[0.18em] uppercase mb-3">Live Standings</p>
+                <h2 className="text-6xl font-black leading-tight tracking-tight">Sector Family Sahityotsav</h2>
+                <p className="mt-3 text-2xl text-slate-200">Updated at {updatedAtLabel}</p>
+              </div>
+              <div className="px-5 py-3 rounded-2xl bg-amber-400/20 border border-amber-300/40 text-right">
+                <p className="text-sm uppercase tracking-widest text-amber-100">Total Frames</p>
+                <p className="text-4xl font-black text-amber-200 tabular-nums">{data.total}</p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {exportRows.map((entry, index) => {
+                const progress = Math.max(6, (entry.count / maxCount) * 100);
+                return (
+                  <div key={entry.unit} className="relative rounded-2xl border border-white/15 bg-white/5 px-5 py-4 overflow-hidden">
+                    <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-300/30 to-sky-300/20" style={{ width: `${progress}%` }} />
+                    <div className="relative z-10 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-4 min-w-0">
+                        <span className="w-10 h-10 rounded-full bg-white/15 border border-white/20 flex items-center justify-center font-bold text-lg tabular-nums">
+                          {index + 1}
+                        </span>
+                        <span className="text-2xl font-bold truncate">{entry.unit}</span>
+                      </div>
+                      <span className="text-3xl font-black tabular-nums text-amber-200">{entry.count}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-8 pt-5 border-t border-white/15 flex items-center justify-between text-lg text-slate-200">
+              <span>Karassery Sector Sahityolsav</span>
+              <span>Updated at {updatedAtLabel}</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
