@@ -205,9 +205,9 @@ export function SectorDashboard() {
                     <Activity className="w-6 h-6 text-primary p-1 bg-primary/10 rounded-md" />
                     Sector Family Sahityotsav
                   </CardTitle>
-                  <CardDescription className="text-sm sm:text-base font-medium">
+                  {/* <CardDescription className="text-sm sm:text-base font-medium">
                     Updated at {updatedAtLabel}
-                  </CardDescription>
+                  </CardDescription> */}
                 </div>
               </div>
             </CardHeader>
@@ -335,7 +335,10 @@ export function SectorDashboard() {
             </div>
 
             <div className="mt-8 pt-5 border-t border-white/15 flex items-center justify-between text-lg text-slate-200">
-              <span>Karassery Sector Sahityolsav</span>
+              <span>
+                <span style={{ fontFamily: '"Cooper Black", "CooperBlack", "Bookman Old Style", serif' }}>SSF</span>{" "}
+                Karassery Sector
+              </span>
               <span>Updated at {updatedAtLabel}</span>
             </div>
           </div>
