@@ -63,8 +63,15 @@ export function FrameCanvas({
   onActiveTextChange,
 }: FrameCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const familyBoxRef = useRef<HTMLDivElement>(null);
+  const familyMeasureRef = useRef<HTMLDivElement>(null);
   const [photoNatural, setPhotoNatural] = useState({ width: 0, height: 0 });
+  const [familyRender, setFamilyRender] = useState({
+    fontSize: familyText.fontSize,
+    width: Math.max(1, Math.round(width * clamp(familyText.width, 0.08, 0.9))),
+    height: Math.max(1, Math.round(height * clamp(familyText.height, 0.06, 0.5))),
+    left: Math.round(width * familyText.x),
+    top: Math.round(height * familyText.y),
+  });
 
   const pointers = useRef<Map<number, Point>>(new Map());
   const panAnchor = useRef<Point | null>(null);
@@ -97,41 +104,101 @@ export function FrameCanvas({
     if (!photoNatural.width || !photoNatural.height) {
       return 1;
     }
-    return Math.min(width / photoNatural.width, height / photoNatural.height);
+    return Math.max(width / photoNatural.width, height / photoNatural.height);
   }, [photoNatural, width, height]);
 
   const effectiveScale = baseScale * photoTransform.scale;
 
   useLayoutEffect(() => {
-    const element = familyBoxRef.current;
-    if (!element) {
-      return;
-    }
-
     const content = familyName?.trim();
     if (!content) {
-      element.style.fontSize = `${familyText.fontSize}px`;
       return;
     }
 
-    const maxFontSize = Math.max(8, familyText.fontSize);
-    const minFontSize = 9;
-    let nextSize = maxFontSize;
-
-    const overflows = () => {
-      const heightOverflow = element.scrollHeight - element.clientHeight > 1;
-      const widthOverflow = element.scrollWidth - element.clientWidth > 1;
-      return heightOverflow || widthOverflow;
-    };
-
-    element.style.fontSize = `${maxFontSize}px`;
-
-    while (nextSize > minFontSize && overflows()) {
-      nextSize -= 1;
-      element.style.fontSize = `${nextSize}px`;
+    const measurer = familyMeasureRef.current;
+    if (!measurer) {
+      return;
     }
+
+    const maxWidth = Math.max(1, Math.round(width * clamp(familyText.width, 0.08, 0.9)));
+    const maxHeight = Math.max(1, Math.round(height * clamp(familyText.height, 0.06, 0.5)));
+    const maxFontSize = Math.max(8, Math.round(familyText.fontSize));
+    const minFontSize = 9;
+    const hasBackground = familyText.showBackground ?? true;
+    const textAlign = familyText.textAlign ?? "center";
+
+    let chosenFont = maxFontSize;
+    let chosenWidth = maxWidth;
+    let chosenHeight = maxHeight;
+
+    for (let size = maxFontSize; size >= minFontSize; size -= 1) {
+      const padding = hasBackground ? clamp(Math.round(size * 0.28), 4, 14) : 0;
+
+      measurer.style.fontSize = `${size}px`;
+      measurer.style.fontFamily = familyText.fontFamily;
+      measurer.style.fontWeight = `${familyText.fontWeight}`;
+      measurer.style.lineHeight = "1.2";
+      measurer.style.padding = `${padding}px`;
+      measurer.style.maxWidth = "none";
+      measurer.style.width = "fit-content";
+      measurer.style.whiteSpace = "nowrap";
+      measurer.style.overflowWrap = "normal";
+      measurer.style.wordBreak = "normal";
+      measurer.textContent = content;
+
+      const measuredWidth = Math.max(1, Math.ceil(measurer.scrollWidth));
+      const measuredHeight = Math.max(1, Math.ceil(measurer.scrollHeight));
+
+      chosenFont = size;
+      chosenWidth = Math.min(maxWidth, measuredWidth);
+      chosenHeight = Math.min(maxHeight, measuredHeight);
+
+      if (measuredWidth <= maxWidth && measuredHeight <= maxHeight) {
+        break;
+      }
+    }
+
+    const anchorOffset =
+      textAlign === "center"
+        ? chosenWidth / 2
+        : textAlign === "right"
+          ? chosenWidth
+          : 0;
+
+    const nextLeft = clamp(
+      Math.round(familyText.x * width - anchorOffset),
+      0,
+      Math.max(0, width - chosenWidth),
+    );
+    const nextTop = clamp(
+      Math.round(familyText.y * height),
+      0,
+      Math.max(0, height - chosenHeight),
+    );
+
+    setFamilyRender((prev) => {
+      if (
+        prev.fontSize === chosenFont &&
+        prev.width === chosenWidth &&
+        prev.height === chosenHeight &&
+        prev.left === nextLeft &&
+        prev.top === nextTop
+      ) {
+        return prev;
+      }
+
+      return {
+        fontSize: chosenFont,
+        width: chosenWidth,
+        height: chosenHeight,
+        left: nextLeft,
+        top: nextTop,
+      };
+    });
   }, [
     familyName,
+    familyText.x,
+    familyText.y,
     familyText.fontSize,
     familyText.width,
     familyText.height,
@@ -139,6 +206,7 @@ export function FrameCanvas({
     familyText.fontWeight,
     familyText.showBackground,
     familyText.borderRadius,
+    familyText.textAlign,
     width,
     height,
   ]);
@@ -330,9 +398,7 @@ export function FrameCanvas({
     const isSelected = activeText === key;
     const hasBackground = layout.showBackground ?? true;
     const verticalPad = hasBackground ? clamp(Math.round(layout.fontSize * 0.16), 2, 10) : 0;
-    const defaultHorizontalPad = hasBackground ? clamp(Math.round(layout.fontSize * 0.34), 4, 20) : 0;
-    const counterHorizontalPad = hasBackground ? clamp(Math.round(layout.fontSize * 0.14), 2, 6) : 0;
-    const horizontalPad = key === "counter" ? counterHorizontalPad : defaultHorizontalPad;
+    const horizontalPad = hasBackground ? clamp(Math.round(layout.fontSize * 0.26), 4, 20) : 0;
     const borderRadius = clamp(
       Number(layout.borderRadius ?? Math.round(layout.fontSize * 0.32)),
       0,
@@ -348,7 +414,8 @@ export function FrameCanvas({
       fontSize: layout.fontSize,
       fontFamily: layout.fontFamily,
       fontWeight: layout.fontWeight,
-      letterSpacing: key === "counter" ? "0.02em" : "0.01em",
+      letterSpacing: key === "counter" ? "0em" : "0.01em",
+      fontVariantNumeric: key === "counter" ? "tabular-nums" : undefined,
       lineHeight: 1.08,
       textAlign,
       cursor: editableText ? "grab" : "default",
@@ -363,7 +430,6 @@ export function FrameCanvas({
       justifyContent: textAlign === "left" ? "flex-start" : textAlign === "right" ? "flex-end" : "center",
       whiteSpace: "nowrap",
       zIndex: 40,
-      minWidth: key === "counter" ? `${clamp(Math.round(layout.fontSize * 1.7), 26, 90)}px` : undefined,
       transition: "box-shadow 120ms ease",
     };
 
@@ -389,8 +455,8 @@ export function FrameCanvas({
       return null;
     }
 
-    const boxWidth = clamp(familyText.width, 0.08, 0.9);
-    const boxHeight = clamp(familyText.height, 0.06, 0.5);
+    const boxWidth = Math.max(1, familyRender.width);
+    const boxHeight = Math.max(1, familyRender.height);
     const hasBackground = familyText.showBackground ?? true;
     const textAlign = familyText.textAlign ?? "center";
     const isSelected = activeText === "family";
@@ -423,13 +489,18 @@ export function FrameCanvas({
       familyPointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
 
       const rect = containerRef.current.getBoundingClientRect();
-      const x = (event.clientX - rect.left - familyDragOffset.current.x) / width;
+      const left = event.clientX - rect.left - familyDragOffset.current.x;
+      const anchorOffset =
+        textAlign === "center" ? boxWidth / 2 : textAlign === "right" ? boxWidth : 0;
+      const anchorX = (left + anchorOffset) / width;
+      const minAnchorX = anchorOffset / width;
+      const maxAnchorX = (width - boxWidth + anchorOffset) / width;
       const y = (event.clientY - rect.top - familyDragOffset.current.y) / height;
 
       onFamilyTextChange({
         ...familyText,
-        x: clamp(x, 0, Math.max(0, 1 - boxWidth)),
-        y: clamp(y, 0, Math.max(0, 1 - boxHeight)),
+        x: clamp(anchorX, minAnchorX, maxAnchorX),
+        y: clamp(y, 0, Math.max(0, 1 - boxHeight / height)),
       });
     };
 
@@ -447,7 +518,6 @@ export function FrameCanvas({
 
     return (
       <div
-        ref={familyBoxRef}
         role={editableText ? "button" : undefined}
         tabIndex={editableText ? 0 : undefined}
         onClick={() => editableText && onActiveTextChange?.("family")}
@@ -457,21 +527,22 @@ export function FrameCanvas({
         onPointerCancel={onFamilyPointerUp}
         style={{
           position: "absolute",
-          left: `${familyText.x * 100}%`,
-          top: `${familyText.y * 100}%`,
-          width: `${boxWidth * 100}%`,
-          height: `${boxHeight * 100}%`,
+          left: familyRender.left,
+          top: familyRender.top,
+          width: boxWidth,
+          height: boxHeight,
           color: familyText.color,
-          fontSize: familyText.fontSize,
+          fontSize: familyRender.fontSize,
           fontFamily: familyText.fontFamily,
           fontWeight: familyText.fontWeight,
           lineHeight: 1.2,
           textAlign,
-          whiteSpace: "pre-wrap",
-          overflowWrap: "anywhere",
-          wordBreak: "break-word",
+          whiteSpace: "nowrap",
+          overflowWrap: "normal",
+          wordBreak: "normal",
+          textOverflow: "ellipsis",
           overflow: "hidden",
-          padding: hasBackground ? `${clamp(Math.round(familyText.fontSize * 0.28), 4, 14)}px` : "0px",
+          padding: hasBackground ? `${clamp(Math.round(familyRender.fontSize * 0.28), 4, 14)}px` : "0px",
           borderRadius: clamp(
             Number(familyText.borderRadius ?? Math.round(familyText.fontSize * 0.26)),
             0,
@@ -506,9 +577,7 @@ export function FrameCanvas({
       style={{
         width,
         height,
-        backgroundImage: `url('${frameImage}')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        backgroundColor: "transparent",
       }}
     >
       {photo ? (
@@ -551,12 +620,29 @@ export function FrameCanvas({
             inset: 0,
             width: "100%",
             height: "100%",
-            objectFit: "cover",
+            objectFit: "fill",
             pointerEvents: "none",
             zIndex: 30,
           }}
         />
       ) : null}
+
+      <div
+        ref={familyMeasureRef}
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          left: -10000,
+          top: -10000,
+          visibility: "hidden",
+          pointerEvents: "none",
+          whiteSpace: "pre-wrap",
+          overflowWrap: "anywhere",
+          wordBreak: "break-word",
+          width: "fit-content",
+          zIndex: -1,
+        }}
+      />
     </div>
   );
 }
