@@ -128,6 +128,10 @@ export function SectorDashboard() {
 
     setSharing("image");
     try {
+        if (document.fonts?.load) {
+        await document.fonts.load('700 1em "Cooper Black Poster"');
+        await document.fonts.ready;
+      }
       const canvas = await html2canvas(sharePosterRef.current, {
         useCORS: true,
         backgroundColor: "#0b1220",
@@ -377,7 +381,7 @@ export function SectorDashboard() {
               </div>
             </div>
 
-            <div className="mt-10 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm overflow-hidden">
+            <div className="mt-16 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm overflow-hidden">
               <div className="grid grid-cols-[110px_1fr_170px] px-10 py-5 text-slate-300 text-xl font-bold tracking-[0.18em] uppercase border-b border-white/10">
                 <span></span>
                 <span>Unit</span>
@@ -401,7 +405,7 @@ export function SectorDashboard() {
 
              <div className="mt-8 pt-5 flex items-center justify-between text-lg text-slate-200">
               <span>
-                <span style={{ fontFamily: '"Cooper Black", "CooperBlack", "Bookman Old Style", serif' }}>SSF</span>{" "}
+                <span style={{ fontFamily: '"Cooper Black Poster", serif', fontWeight: 700 }} className="text-sm">SSF</span>{" "}
                 Karassery Sector
               </span>
               <span>Updated at {updatedAtLabel}</span>
