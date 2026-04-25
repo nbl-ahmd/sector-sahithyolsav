@@ -1,6 +1,7 @@
 "use client";
 
 import html2canvas from "html2canvas-pro";
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { downloadBlob, copyToClipboard } from "@/lib/client-utils";
 import { LeaderboardSnapshot } from "@/lib/types";
@@ -306,49 +307,67 @@ export function SectorDashboard() {
               "radial-gradient(circle at 12% 8%, rgba(59,130,246,0.28), transparent 22%), radial-gradient(circle at 90% 8%, rgba(251,191,36,0.25), transparent 22%), linear-gradient(180deg, #081427 0%, #111827 55%, #09111d 100%)",
           }}
         >
-          <div className="h-full rounded-[32px] border border-white/10 bg-white/[0.03] backdrop-blur-sm px-8 py-7 flex flex-col overflow-hidden">
-            <div className="flex items-start justify-between gap-6 mb-8">
-              <div className="space-y-2">
-                <p className="text-[14px] sm:text-[15px] font-bold uppercase tracking-[0.4em] text-white/65">Live Standings</p>
-                <h2 className="text-[62px] leading-[0.95] font-black tracking-tight text-white">Sector Family Sahityotsav</h2>
+          <div className="h-full rounded-[32px] border border-white/10 bg-white/[0.03] backdrop-blur-sm px-8 py-7 flex flex-col overflow-hidden relative">
+            <div className="absolute inset-x-0 top-0 h-44 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
+            <div className="absolute -left-20 top-10 w-72 h-72 rounded-full bg-blue-500/10 blur-[110px] pointer-events-none" />
+            <div className="absolute -right-20 top-10 w-72 h-72 rounded-full bg-amber-400/10 blur-[110px] pointer-events-none" />
+
+            <div className="relative flex items-start justify-between gap-6 mb-12">
+              <div className="flex items-start gap-4">
+                <div className="w-20 h-20 rounded-[22px] border border-white/15 bg-white/8 p-2.5 shadow-2xl overflow-hidden flex items-center justify-center">
+                  <Image
+                    src="/SAHITYOTSAV LOGO.png"
+                    alt="Sahityolsav logo"
+                    width={80}
+                    height={80}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <div className="space-y-2 pt-1">
+                  <p className="text-[14px] font-bold uppercase tracking-[0.42em] text-white/60">Live Standings</p>
+                  <h2 className="text-[60px] leading-[0.95] font-black tracking-tight text-white">Sector Family Sahityotsav</h2>
+                </div>
               </div>
-              <div className="text-right pt-2">
-                <p className="text-[14px] font-bold uppercase tracking-[0.35em] text-white/55">Total Frames</p>
-                <p className="text-[56px] leading-none font-black text-amber-300 tabular-nums">{data.total}</p>
+
+              <div className="text-right pt-2 min-w-[190px]">
+                <p className="text-[14px] font-bold uppercase tracking-[0.35em] text-white/55">Total</p>
+                <p className="text-[58px] leading-none font-black text-amber-300 tabular-nums">{data.total}</p>
               </div>
             </div>
 
-            <div className="flex-1 rounded-[24px] border border-white/10 bg-white/[0.04] overflow-hidden">
-              <div className="grid grid-cols-[88px_minmax(0,1fr)_120px] items-center px-6 py-5 border-b border-white/10 text-[14px] font-black uppercase tracking-[0.35em] text-white/60">
-                <div className="text-center">Rank</div>
+            <div className="flex-1 overflow-hidden">
+              <div className="grid grid-cols-[90px_minmax(0,1fr)_140px] items-center px-7 py-5 border-b border-white/10 text-[14px] font-black uppercase tracking-[0.35em] text-white/60 bg-white/[0.02]">
+                <div className="text-center" />
                 <div>Unit</div>
-                <div className="text-right">Frames</div>
+                <div className="text-right">Count</div>
               </div>
 
-              <div className="divide-y divide-white/6">
+              <div className="divide-y divide-white/7">
                 {exportRows.map((entry, index) => {
                   const rankStyle =
                     index === 0
-                      ? "bg-[#F7D34A] text-[#4A3600]"
+                      ? "bg-[#FFD24A] text-[#604600] shadow-[0_10px_20px_rgba(255,210,74,0.25)]"
                       : index === 1
-                      ? "bg-[#D8DEE8] text-[#314055]"
+                      ? "bg-[#DDE3EC] text-[#334155] shadow-[0_10px_20px_rgba(221,227,236,0.18)]"
                       : index === 2
-                      ? "bg-[#F5BE74] text-[#5A3603]"
-                      : "bg-[#3C465A] text-white/80";
+                      ? "bg-[#FDBE72] text-[#6A3E00] shadow-[0_10px_20px_rgba(253,190,114,0.2)]"
+                      : "bg-[#38465F] text-white/85";
 
                   return (
-                    <div key={entry.unit} className="grid grid-cols-[88px_minmax(0,1fr)_120px] items-center px-6 py-7 min-h-[96px]">
+                    <div key={entry.unit} className="grid grid-cols-[90px_minmax(0,1fr)_140px] items-center px-7 py-7 min-h-[98px] hover:bg-white/[0.03] transition-colors">
                       <div className="flex justify-center">
-                        <div className={`w-11 h-11 rounded-full flex items-center justify-center font-black text-[22px] shadow-sm ring-4 ring-white/10 ${rankStyle}`}>
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-[22px] ring-4 ring-white/10 ${rankStyle}`}>
                           {index + 1}
                         </div>
                       </div>
+
                       <div className="min-w-0 pr-4">
-                        <div className="text-[33px] leading-none font-extrabold tracking-tight text-white truncate">
+                        <div className="text-[32px] leading-none font-extrabold tracking-tight text-white truncate">
                           {entry.unit}
                         </div>
                       </div>
-                      <div className="text-right text-[28px] leading-none font-black tabular-nums text-cyan-300">
+
+                      <div className="text-right text-[30px] leading-none font-black tabular-nums text-cyan-300">
                         {entry.count}
                       </div>
                     </div>
@@ -357,14 +376,10 @@ export function SectorDashboard() {
               </div>
             </div>
 
-            <div className="pt-7 text-center text-[18px] font-semibold text-white/72">
-              Real-time ranking by participation
-            </div>
-
-            <div className="mt-6 pt-5 border-t border-white/10 flex items-center justify-between text-[18px] text-white/78">
-              <span>
-                <span style={{ fontFamily: '"Cooper Black Poster", serif', fontWeight: 700 }}>SSF</span>{" "}
-                Karassery Sector
+            <div className="mt-7 pt-5 border-t border-white/10 flex items-center justify-between text-[18px] text-white/78">
+              <span className="inline-flex items-center gap-2">
+                <span style={{ fontFamily: '"Cooper Black Poster", serif', fontWeight: 700 }}>SSF</span>
+                <span>Karassery Sector</span>
               </span>
               <span>Updated at {updatedAtLabel}</span>
             </div>
