@@ -6,10 +6,43 @@ import { Toaster } from "@/components/ui/sonner";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
+const siteTitle = "Karassery sector sahityolsav";
+const siteDescription =
+  "Official Karassery Sector Sahityolsav app for live standings, family framing, and updates.";
+const logoPath = "/SAHITYOTSAV LOGO.png";
+
 export const metadata: Metadata = {
-  title: "Sector Sahityolsav",
-  description:
-    "Sector Sahityolsav app with Family framing structured under the /family section.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+  title: siteTitle,
+  description: siteDescription,
+  openGraph: {
+    title: siteTitle,
+    description: siteDescription,
+    type: "website",
+    images: [
+      {
+        url: logoPath,
+        width: 1200,
+        height: 1200,
+        alt: "Karassery Sector Sahityolsav logo",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: siteTitle,
+    description: siteDescription,
+    images: [logoPath],
+  },
+  icons: {
+    icon: [
+      { url: logoPath, type: "image/png" },
+      { url: logoPath, sizes: "32x32", type: "image/png" },
+      { url: logoPath, sizes: "192x192", type: "image/png" },
+    ],
+    apple: [{ url: logoPath, sizes: "180x180", type: "image/png" }],
+    shortcut: [logoPath],
+  },
 };
 
 export default function RootLayout({

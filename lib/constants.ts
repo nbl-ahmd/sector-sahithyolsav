@@ -9,9 +9,6 @@ export const FAMILY_FRAME_TEMPLATE_ID = "family-sahityolsav-frame";
 export const FAMILY_FRAME_ROUTE_BASE = `${FAMILY_BASE_ROUTE}/${FAMILY_FRAME_FEATURE_ID}`;
 
 export function getFamilyFrameRoute(templateId = FAMILY_FRAME_TEMPLATE_ID): string {
-  if (!templateId || templateId === FAMILY_FRAME_TEMPLATE_ID) {
-    return FAMILY_FRAME_ROUTE_BASE;
-  }
   return `${FAMILY_FRAME_ROUTE_BASE}/${templateId}`;
 }
 
